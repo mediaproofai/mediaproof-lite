@@ -7,7 +7,7 @@ import { Shield, Upload, FileSearch, AlertTriangle, Lock, Globe, Activity, Zap, 
 // --- CONFIGURATION (FILL THESE IN) ---
 const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dphicbaf2/auto/upload";
 const UPLOAD_PRESET = "fhnvskdnf"; 
-const ORCHESTRATOR_URL = "https://orchestration-service.vercel.app/api/analyze"; // Your Vercel URL
+const ORCHESTRATOR_URL = "https://mediaproofai.mediaproofai.workers.dev/"; // Your Vercel URL
 const PAYPAL_ME_LINK = "https://paypal.me/yourusername"; // Your PayPal Link
 
 const ADMIN_EMAIL = "mediaproofai@gmail.com";
