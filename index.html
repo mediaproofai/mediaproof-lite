@@ -1,1 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mediaproof | Enterprise Forensic Intelligence</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
 
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        bg: { deep: '#030305', panel: '#0F0F13' },
+                        accent: { blue: '#3B82F6', purple: '#8B5CF6', teal: '#00C2A8' },
+                        glass: { border: 'rgba(255, 255, 255, 0.08)', surface: 'rgba(255, 255, 255, 0.03)' }
+                    },
+                    animation: { 'spin-slow': 'spin 20s linear infinite' }
+                }
+            }
+        }
+    </script>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "react": "https://esm.sh/react@18.2.0",
+                "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+                "framer-motion": "https://esm.sh/framer-motion@10.16.4",
+                "three": "https://esm.sh/three@0.158.0",
+                "lucide-react": "https://esm.sh/lucide-react@0.292.0"
+            }
+        }
+    </script>
+
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-bg-deep text-slate-200 antialiased overflow-x-hidden selection:bg-accent-blue/30">
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module" src="./app.js"></script>
+</body>
+</html>
