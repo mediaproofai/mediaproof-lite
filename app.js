@@ -2,76 +2,153 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as THREE from 'three';
-import { Shield, Upload, FileSearch, CheckCircle, AlertTriangle, Lock, Fingerprint, Zap, Globe, Activity } from 'lucide-react';
+import { Shield, Upload, FileSearch, AlertTriangle, Lock, Globe, Activity, Zap, CheckCircle, X, CreditCard, LayoutGrid, Award } from 'lucide-react';
 
-// --- MOCK BACKEND & CONFIG ---
-const ADMIN_EMAIL = "admin@mediaproof.com"; // Your bypass email
+// --- CONFIGURATION (FILL THESE IN) ---
+const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/auto/upload";
+const UPLOAD_PRESET = "YOUR_UPLOAD_PRESET"; 
+const ORCHESTRATOR_URL = "https://orchestration-service.vercel.app/api/analyze"; // Your Vercel URL
+const PAYPAL_ME_LINK = "https://paypal.me/yourusername"; // Your PayPal Link
+
+const ADMIN_EMAIL = "mediaproofai@gmail.com";
 const MAX_FREE_DAILY = 2;
 
-// --- COMPONENTS ---
-
-// 1. 3D HERO (Simple Rotating Mesh)
+// --- 3D HERO COMPONENT (Google-Style Abstract Geometry) ---
 const Hero3D = () => {
     const mountRef = useRef(null);
     useEffect(() => {
         if (!mountRef.current) return;
-        
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-        
-        renderer.setSize(300, 300);
+        renderer.setSize(400, 400);
         mountRef.current.appendChild(renderer.domElement);
         
-        // Geometry: Abstract Icosahedron (The "Core")
-        const geometry = new THREE.IcosahedronGeometry(1.2, 0);
+        // Abstract "Data Crystal"
+        const geometry = new THREE.IcosahedronGeometry(1.4, 0);
         const material = new THREE.MeshNormalMaterial({ wireframe: true });
         const sphere = new THREE.Mesh(geometry, material);
         scene.add(sphere);
 
-        // Inner Glow
-        const innerGeo = new THREE.IcosahedronGeometry(0.8, 1);
-        const innerMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, wireframe: false, transparent: true, opacity: 0.1 });
+        // Core Glow
+        const innerGeo = new THREE.IcosahedronGeometry(0.8, 2);
+        const innerMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, wireframe: true, transparent: true, opacity: 0.3 });
         const innerSphere = new THREE.Mesh(innerGeo, innerMat);
         scene.add(innerSphere);
 
-        camera.position.z = 3;
+        camera.position.z = 3.5;
 
+        // Animation Loop
+        let frameId;
         const animate = () => {
-            requestAnimationFrame(animate);
-            sphere.rotation.x += 0.005;
-            sphere.rotation.y += 0.005;
-            innerSphere.rotation.x -= 0.01;
+            frameId = requestAnimationFrame(animate);
+            sphere.rotation.x += 0.002;
+            sphere.rotation.y += 0.003;
+            innerSphere.rotation.x -= 0.005;
             renderer.render(scene, camera);
         };
         animate();
 
-        return () => mountRef.current?.removeChild(renderer.domElement);
+        return () => {
+            cancelAnimationFrame(frameId);
+            mountRef.current?.removeChild(renderer.domElement);
+        };
     }, []);
-
-    return <div ref={mountRef} className="opacity-80 hover:opacity-100 transition-opacity duration-500" />;
+    return <div ref={mountRef} className="opacity-80 hover:opacity-100 transition-opacity duration-700 pointer-events-none" />;
 };
 
-// 2. NAVBAR
-const Navbar = ({ user, onLogin }) => (
-    <nav className="fixed top-0 w-full z-40 border-b border-white/5 bg-bg-deep/80 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-accent-blue to-accent-purple rounded-lg flex items-center justify-center">
-                    <Shield size={16} className="text-white" />
+// --- PRICING MODAL (Tiers + PayPal) ---
+const PricingModal = ({ onClose, onUpgrade }) => (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+            className="bg-[#0f0f13] border border-white/10 rounded-2xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+        >
+            <div className="flex justify-between items-center mb-8">
+                <div>
+                    <h2 className="text-2xl font-bold text-white">Upgrade Plan</h2>
+                    <p className="text-slate-400 text-sm">Unlock enterprise forensic capabilities.</p>
                 </div>
-                <span className="font-semibold tracking-tight">Mediaproof</span>
+                <button onClick={onClose}><X className="text-slate-500 hover:text-white" /></button>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6">
+                {/* Tier 1 */}
+                <div className="p-6 rounded-xl border border-white/5 bg-white/5 hover:border-accent-blue/50 transition-colors">
+                    <h3 className="text-lg font-semibold text-white">Individual</h3>
+                    <div className="text-3xl font-bold my-2">$19<span className="text-sm text-slate-500 font-normal">/mo</span></div>
+                    <ul className="text-sm text-slate-400 space-y-3 mb-6">
+                        <li className="flex gap-2"><CheckCircle size={16} className="text-accent-teal"/> 20 Checks / Day</li>
+                        <li className="flex gap-2"><CheckCircle size={16} className="text-accent-teal"/> Basic Reports</li>
+                        <li className="flex gap-2"><CheckCircle size={16} className="text-accent-teal"/> Priority Support</li>
+                    </ul>
+                    <a href={PAYPAL_ME_LINK + "/19"} target="_blank" className="block text-center w-full py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white font-medium transition-colors">
+                        Choose Individual
+                    </a>
+                </div>
+
+                {/* Tier 2 (Highlighted) */}
+                <div className="p-6 rounded-xl border border-accent-blue/50 bg-accent-blue/5 relative">
+                    <div className="absolute top-0 right-0 bg-accent-blue text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg">POPULAR</div>
+                    <h3 className="text-lg font-semibold text-white">Professional</h3>
+                    <div className="text-3xl font-bold my-2">$49<span className="text-sm text-slate-500 font-normal">/mo</span></div>
+                    <ul className="text-sm text-slate-400 space-y-3 mb-6">
+                        <li className="flex gap-2"><CheckCircle size={16} className="text-accent-teal"/> 50 Checks / Day</li>
+                        <li className="flex gap-2"><CheckCircle size={16} className="text-accent-teal"/> Deep Forensic Analysis</li>
+                        <li className="flex gap-2"><CheckCircle size={16} className="text-accent-teal"/> API Access</li>
+                    </ul>
+                    <a href={PAYPAL_ME_LINK + "/49"} target="_blank" className="block text-center w-full py-2 rounded-lg bg-accent-blue hover:bg-blue-600 text-white font-medium transition-colors shadow-[0_0_20px_rgba(59,130,246,0.3)]">
+                        Choose Professional
+                    </a>
+                </div>
+
+                {/* Tier 3 */}
+                <div className="p-6 rounded-xl border border-accent-purple/30 bg-accent-purple/5">
+                    <h3 className="text-lg font-semibold text-white">Unlimited</h3>
+                    <div className="text-3xl font-bold my-2">$99<span className="text-sm text-slate-500 font-normal">/mo</span></div>
+                    <ul className="text-sm text-slate-400 space-y-3 mb-6">
+                        <li className="flex gap-2"><CheckCircle size={16} className="text-accent-teal"/> Unlimited Checks</li>
+                        <li className="flex gap-2"><CheckCircle size={16} className="text-accent-teal"/> Dedicated Server</li>
+                        <li className="flex gap-2"><CheckCircle size={16} className="text-accent-teal"/> White Label Reports</li>
+                    </ul>
+                    <a href={PAYPAL_ME_LINK + "/99"} target="_blank" className="block text-center w-full py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white font-medium transition-colors">
+                        Contact Sales
+                    </a>
+                </div>
+            </div>
+        </motion.div>
+    </div>
+);
+
+// --- NAVBAR COMPONENT ---
+const Navbar = ({ user, onLogin, onOpenPricing }) => (
+    <nav className="fixed top-0 w-full z-40 border-b border-white/5 bg-bg-deep/80 backdrop-blur-md h-[var(--nav-height)]">
+        <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
+            <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-accent-blue to-accent-purple rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20">
+                    <Shield size={18} className="text-white" />
+                </div>
+                <div>
+                    <h1 className="font-bold text-lg tracking-tight leading-none">MediaProof</h1>
+                    <span className="text-[10px] text-accent-blue font-mono uppercase tracking-widest">Enterprise</span>
+                </div>
             </div>
             <div className="flex items-center gap-4 text-sm font-medium">
                 {user ? (
                     <>
-                        <span className="text-gray-400">Credits: <span className="text-accent-teal">{user.email === ADMIN_EMAIL ? '∞' : user.credits}</span></span>
-                        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs">
-                            {user.email[0].toUpperCase()}
+                        <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/5">
+                            <span className="text-slate-400 text-xs">CREDITS</span>
+                            <span className={`text-accent-teal font-mono ${user.email === ADMIN_EMAIL ? 'text-lg' : ''}`}>
+                                {user.email === ADMIN_EMAIL ? '∞' : user.credits}
+                            </span>
                         </div>
+                        {user.email === ADMIN_EMAIL && (
+                            <span className="text-[10px] bg-accent-purple/20 text-accent-purple px-2 py-0.5 rounded border border-accent-purple/20">ADMIN</span>
+                        )}
+                        <button onClick={onOpenPricing} className="text-slate-400 hover:text-white transition-colors">Upgrade</button>
                     </>
                 ) : (
-                    <button onClick={onLogin} className="glass-btn px-4 py-2 rounded-full text-xs uppercase tracking-wider">
+                    <button onClick={onLogin} className="glass-btn px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider">
                         Sign In
                     </button>
                 )}
@@ -80,240 +157,246 @@ const Navbar = ({ user, onLogin }) => (
     </nav>
 );
 
-// 3. MAIN APP
+// --- MAIN APP ---
 const App = () => {
     const [user, setUser] = useState(null);
     const [view, setView] = useState('landing'); // landing | scanning | results
+    const [showPricing, setShowPricing] = useState(false);
     const [file, setFile] = useState(null);
-    const [scanProgress, setScanProgress] = useState(0);
+    const [report, setReport] = useState(null);
+    const [scanLog, setScanLog] = useState([]);
 
-    // Initial Load: Check LocalStorage for basic "Auth"
+    // 1. Auth & Daily Limit Logic
     useEffect(() => {
-        const storedUser = localStorage.getItem('mediaproof_user');
-        if (storedUser) {
-            checkDailyReset(JSON.parse(storedUser));
-        }
+        const stored = localStorage.getItem('mediaproof_user');
+        if (stored) checkDailyReset(JSON.parse(stored));
     }, []);
 
-    // Logic: Daily Limit Reset
     const checkDailyReset = (userData) => {
         const lastLogin = new Date(userData.lastLogin).toDateString();
         const today = new Date().toDateString();
+        let updated = { ...userData };
         
-        let updatedUser = { ...userData };
+        // Reset credits if new day
         if (lastLogin !== today) {
-            updatedUser.credits = MAX_FREE_DAILY;
-            updatedUser.lastLogin = new Date().toISOString();
+            updated.credits = MAX_FREE_DAILY;
+            updated.lastLogin = new Date().toISOString();
+            localStorage.setItem('mediaproof_user', JSON.stringify(updated));
         }
-        
-        setUser(updatedUser);
-        localStorage.setItem('mediaproof_user', JSON.stringify(updatedUser));
+        setUser(updated);
     };
 
-    // Action: Login (Mock)
     const handleLogin = () => {
-        const email = prompt("Enter email (Use 'admin@mediaproof.com' for unlimited):");
+        const email = prompt("Enter your email to sign in:");
         if (!email) return;
         
+        // Check if admin
+        const isAdmin = email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+        
         const newUser = {
-            email,
-            credits: MAX_FREE_DAILY,
+            email: email,
+            credits: isAdmin ? 999999 : MAX_FREE_DAILY,
             lastLogin: new Date().toISOString()
         };
-        checkDailyReset(newUser);
+        
+        localStorage.setItem('mediaproof_user', JSON.stringify(newUser));
+        setUser(newUser);
     };
 
-    // Action: Handle Upload
-    const handleUpload = (e) => {
-        if (!user) {
-            alert("Please Sign In first.");
-            return handleLogin();
-        }
+    // 2. Upload Logic (Cloudinary -> Backend)
+    const handleUpload = async (e) => {
+        const selectedFile = e.target.files?.[0];
+        if (!selectedFile) return;
 
-        if (user.credits <= 0 && user.email !== ADMIN_EMAIL) {
-            alert("Daily limit reached! Upgrade to Enterprise.");
+        if (!user) {
+            alert("Please sign in to run a scan.");
+            handleLogin();
             return;
         }
 
-        const uploadedFile = e.target.files?.[0];
-        if (uploadedFile) {
-            setFile(uploadedFile);
-            startScan();
+        if (user.credits <= 0 && user.email !== ADMIN_EMAIL) {
+            setShowPricing(true);
+            return;
         }
-    };
 
-    // Action: Simulate Scan
-    const startScan = () => {
+        setFile(selectedFile);
         setView('scanning');
-        let progress = 0;
-        const interval = setInterval(() => {
-            progress += Math.random() * 10;
-            if (progress >= 100) {
-                clearInterval(interval);
-                setScanProgress(100);
-                setTimeout(() => {
-                    completeScan();
-                }, 800);
-            } else {
-                setScanProgress(progress);
-            }
-        }, 200);
-    };
+        setScanLog(["Initializing secure environment...", "Allocating neural engines..."]);
 
-    const completeScan = () => {
-        // Deduct Credit
-        if (user.email !== ADMIN_EMAIL) {
-            const updatedUser = { ...user, credits: user.credits - 1 };
-            setUser(updatedUser);
-            localStorage.setItem('mediaproof_user', JSON.stringify(updatedUser));
+        try {
+            // A. Upload to Cloudinary
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('upload_preset', UPLOAD_PRESET);
+
+            const cloudRes = await fetch(CLOUDINARY_URL, { method: 'POST', body: formData });
+            const cloudData = await cloudRes.json();
+            
+            if (!cloudData.secure_url) throw new Error("Upload failed. Check Cloudinary keys.");
+
+            setScanLog(prev => [...prev, "Upload complete. Hashing file...", "Sending to Orchestrator..."]);
+
+            // B. Call Your Backend
+            const backendRes = await fetch(ORCHESTRATOR_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    mediaUrl: cloudData.secure_url,
+                    type: selectedFile.type.startsWith('image') ? 'image' : selectedFile.type.startsWith('audio') ? 'audio' : 'video'
+                })
+            });
+
+            const analysisResult = await backendRes.json();
+            setReport(analysisResult);
+
+            // C. Deduct Credit
+            if (user.email !== ADMIN_EMAIL) {
+                const updated = { ...user, credits: user.credits - 1 };
+                setUser(updated);
+                localStorage.setItem('mediaproof_user', JSON.stringify(updated));
+            }
+
+            // Fake delay for effect if backend is too fast
+            setTimeout(() => setView('results'), 1500);
+
+        } catch (error) {
+            console.error(error);
+            setScanLog(prev => [...prev, "ERROR: Analysis failed. " + error.message]);
+            alert("Scan failed. See console for details.");
+            setView('landing');
         }
-        setView('results');
     };
 
     return (
-        <div className="min-h-screen text-slate-200">
+        <div className="min-h-screen pt-[var(--nav-height)] relative">
             <div className="cinematic-grain"></div>
             <div className="aurora-bg"></div>
-            
-            <Navbar user={user} onLogin={handleLogin} />
 
-            <main className="pt-24 px-6 max-w-7xl mx-auto min-h-[80vh] flex flex-col items-center justify-center">
+            <Navbar user={user} onLogin={handleLogin} onOpenPricing={() => setShowPricing(true)} />
+            
+            {showPricing && <PricingModal onClose={() => setShowPricing(false)} />}
+
+            <main className="container mx-auto px-4 py-12 flex flex-col items-center justify-center min-h-[85vh]">
                 <AnimatePresence mode="wait">
                     
-                    {/* VIEW 1: LANDING / UPLOAD */}
+                    {/* --- VIEW: LANDING --- */}
                     {view === 'landing' && (
                         <motion.div 
                             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
-                            className="text-center w-full max-w-4xl"
+                            className="text-center max-w-5xl w-full"
                         >
-                            <div className="flex justify-center mb-8"><Hero3D /></div>
+                            <div className="flex justify-center mb-8 relative z-10">
+                                <Hero3D />
+                            </div>
                             
-                            <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-b from-white via-slate-200 to-slate-500">
-                                Trust, verified.
+                            <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-b from-white via-slate-200 to-slate-500 relative z-20">
+                                Verify Reality.
                             </h1>
-                            <p className="text-lg text-slate-400 mb-12 max-w-2xl mx-auto leading-relaxed">
-                                The enterprise standard for automated media forensics. 
+                            <p className="text-lg text-slate-400 mb-12 max-w-2xl mx-auto leading-relaxed relative z-20">
+                                The industry standard for automated media forensics. 
                                 Detect deepfakes, recover metadata, and verify origin in milliseconds.
                             </p>
 
-                            <div className="relative group max-w-xl mx-auto">
+                            <div className="relative group max-w-xl mx-auto z-30">
                                 <div className="absolute -inset-0.5 bg-gradient-to-r from-accent-blue to-accent-purple rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-500"></div>
-                                <label className="relative flex flex-col items-center justify-center h-48 bg-bg-panel/80 rounded-2xl border border-white/10 cursor-pointer overflow-hidden backdrop-blur-xl">
+                                <label className="relative flex flex-col items-center justify-center h-48 bg-[#0f0f13]/90 rounded-2xl border border-white/10 cursor-pointer overflow-hidden backdrop-blur-xl hover:border-accent-blue/50 transition-colors">
                                     <div className="scanline"></div>
                                     <Upload className="w-10 h-10 text-slate-500 mb-4 group-hover:text-accent-blue transition-colors" />
                                     <span className="text-sm font-medium text-slate-300">Drop media to analyze</span>
-                                    <span className="text-xs text-slate-500 mt-2">JPG, PNG, MP4, WAV</span>
+                                    <span className="text-xs text-slate-500 mt-2 font-mono">JPG • PNG • MP4 • WAV</span>
                                     <input type="file" className="hidden" onChange={handleUpload} />
                                 </label>
                             </div>
 
-                            <div className="mt-8 flex justify-center gap-8 text-xs text-slate-500 font-mono uppercase tracking-widest">
-                                <span className="flex items-center gap-2"><Lock size={12}/> Secure Upload</span>
-                                <span className="flex items-center gap-2"><Zap size={12}/> Instant Analysis</span>
-                                <span className="flex items-center gap-2"><Globe size={12}/> Global OSINT</span>
+                            {/* Ads Placeholder */}
+                            <div className="mt-16 w-full max-w-3xl mx-auto h-24 border border-dashed border-white/10 rounded-lg flex items-center justify-center text-slate-600 text-xs uppercase tracking-widest bg-black/20">
+                                Sponsor Slot
                             </div>
                         </motion.div>
                     )}
 
-                    {/* VIEW 2: SCANNING */}
+                    {/* --- VIEW: SCANNING --- */}
                     {view === 'scanning' && (
                         <motion.div 
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             className="w-full max-w-md text-center"
                         >
                             <Activity className="w-12 h-12 text-accent-blue mx-auto mb-6 animate-pulse" />
-                            <h2 className="text-xl font-mono text-accent-blue mb-2">ANALYZING ARTIFACTS...</h2>
-                            <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden mb-4">
-                                <motion.div 
-                                    className="h-full bg-accent-blue shadow-[0_0_15px_rgba(59,130,246,0.6)]"
-                                    style={{ width: `${scanProgress}%` }}
-                                />
-                            </div>
-                            <div className="text-xs font-mono text-slate-500 text-left space-y-1">
-                                <p className={scanProgress > 20 ? "text-green-400" : "text-slate-600"}>[+] Extracting EXIF headers...</p>
-                                <p className={scanProgress > 50 ? "text-green-400" : "text-slate-600"}>[+] Querying Neural Hash DB...</p>
-                                <p className={scanProgress > 80 ? "text-green-400" : "text-slate-600"}>[+] Verifying signature integrity...</p>
+                            <h2 className="text-xl font-mono text-accent-blue mb-6">ANALYZING ARTIFACTS...</h2>
+                            <div className="space-y-2 text-left font-mono text-xs text-slate-400 bg-black/40 p-4 rounded-lg border border-white/10 h-48 overflow-y-auto no-scrollbar">
+                                {scanLog.map((log, i) => (
+                                    <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
+                                        <span className="text-accent-teal">root@mediaproof:~$</span> {log}
+                                    </motion.div>
+                                ))}
                             </div>
                         </motion.div>
                     )}
 
-                    {/* VIEW 3: RESULTS DASHBOARD */}
-                    {view === 'results' && file && (
+                    {/* --- VIEW: RESULTS --- */}
+                    {view === 'results' && report && (
                         <motion.div 
                             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                            className="w-full grid grid-cols-1 md:grid-cols-3 gap-6"
+                            className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-4 gap-6"
                         >
-                            {/* Card 1: Main Verdict */}
-                            <div className="md:col-span-2 glass-panel p-8 rounded-2xl border-t-4 border-red-500/50 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 p-6 opacity-5"><AlertTriangle size={120} /></div>
-                                <div className="flex items-center gap-2 mb-4">
-                                    <span className="px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold uppercase tracking-wider">High Risk Detected</span>
+                            {/* Score Card */}
+                            <div className="md:col-span-2 md:row-span-2 glass-panel p-8 rounded-2xl flex flex-col justify-between relative overflow-hidden">
+                                <div className={`absolute top-0 right-0 p-8 opacity-10 ${report.risk?.globalScore > 50 ? 'text-red-500' : 'text-green-500'}`}>
+                                    <Shield size={200} />
                                 </div>
-                                <h2 className="text-4xl font-bold text-white mb-2">Manipulation Likely</h2>
-                                <p className="text-slate-400 mb-6 max-w-lg">
-                                    Deep learning models detected significant inconsistencies in the noise distribution (ELA) and localized blurring suggesting object removal.
-                                </p>
-                                <div className="grid grid-cols-3 gap-4 mb-8">
-                                    <div className="p-4 bg-white/5 rounded-xl border border-white/5">
-                                        <div className="text-2xl font-bold text-red-400">94%</div>
-                                        <div className="text-xs text-slate-500 uppercase">AI Score</div>
+                                <div>
+                                    <div className="text-xs font-mono text-slate-500 uppercase mb-2">Global Trust Score</div>
+                                    <div className={`text-8xl font-bold tracking-tighter text-glow ${report.risk?.globalScore > 50 ? 'text-red-500' : 'text-green-500'}`}>
+                                        {100 - (report.risk?.globalScore || 0)}
                                     </div>
-                                    <div className="p-4 bg-white/5 rounded-xl border border-white/5">
-                                        <div className="text-2xl font-bold text-orange-400">High</div>
-                                        <div className="text-xs text-slate-500 uppercase">Tamper Risk</div>
-                                    </div>
-                                    <div className="p-4 bg-white/5 rounded-xl border border-white/5">
-                                        <div className="text-2xl font-bold text-slate-200">2</div>
-                                        <div className="text-xs text-slate-500 uppercase">Edits Found</div>
-                                    </div>
+                                    <div className="text-xl text-slate-400 mt-2">/ 100</div>
                                 </div>
-                                <button onClick={() => setView('landing')} className="glass-btn px-6 py-3 rounded-xl text-sm font-medium">
+                                <div className="mt-8 pt-6 border-t border-white/5">
+                                    <h3 className="text-sm font-bold text-slate-300 uppercase mb-2">Executive Summary</h3>
+                                    <p className="text-slate-400 leading-relaxed text-sm">{report.risk?.executiveSummary || "Analysis complete."}</p>
+                                </div>
+                                <button onClick={() => setView('landing')} className="mt-8 w-full py-4 rounded-xl bg-white text-black font-bold hover:bg-gray-200 transition-colors z-10">
                                     Run Another Scan
                                 </button>
                             </div>
 
-                            {/* Card 2: Metadata */}
-                            <div className="glass-panel p-6 rounded-2xl flex flex-col gap-4">
-                                <div className="flex items-center gap-2 text-accent-purple mb-2">
-                                    <FileSearch size={20} />
-                                    <h3 className="font-semibold">File DNA</h3>
+                            {/* Metadata Card */}
+                            <div className="glass-panel p-6 rounded-2xl md:col-span-2">
+                                <div className="flex items-center gap-2 mb-4 text-accent-purple">
+                                    <FileSearch size={18} />
+                                    <h3 className="font-bold uppercase text-xs tracking-wider">File Forensics</h3>
                                 </div>
-                                <div className="space-y-3 text-sm font-mono text-slate-400">
-                                    <div className="flex justify-between border-b border-white/5 pb-2">
-                                        <span>Name</span> <span className="text-white truncate max-w-[120px]">{file.name}</span>
+                                <div className="grid grid-cols-2 gap-4 text-xs font-mono text-slate-400">
+                                    <div className="p-3 bg-white/5 rounded">
+                                        <div className="text-[10px] text-slate-500 mb-1">TYPE</div>
+                                        <div className="text-white">{file?.type}</div>
                                     </div>
-                                    <div className="flex justify-between border-b border-white/5 pb-2">
-                                        <span>Size</span> <span className="text-white">{(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                                    <div className="p-3 bg-white/5 rounded">
+                                        <div className="text-[10px] text-slate-500 mb-1">SIZE</div>
+                                        <div className="text-white">{(file?.size / 1024 / 1024).toFixed(2)} MB</div>
                                     </div>
-                                    <div className="flex justify-between border-b border-white/5 pb-2">
-                                        <span>Type</span> <span className="text-white uppercase">{file.type.split('/')[1]}</span>
+                                    <div className="p-3 bg-white/5 rounded col-span-2">
+                                        <div className="text-[10px] text-slate-500 mb-1">SOFTWARE SIGNATURE</div>
+                                        <div className="text-white truncate">{report.details?.metadata?.deviceFingerprint?.software || "None Detected"}</div>
                                     </div>
-                                    <div className="flex justify-between border-b border-white/5 pb-2">
-                                        <span>Software</span> <span className="text-red-400">Adobe Photoshop 24.1</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            {/* Card 3: OSINT */}
-                            <div className="glass-panel p-6 rounded-2xl flex flex-col gap-4 md:col-span-3">
-                                <div className="flex items-center gap-2 text-accent-teal mb-2">
-                                    <Globe size={20} />
-                                    <h3 className="font-semibold">Reverse Search Intelligence</h3>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    {[1, 2, 3].map((i) => (
-                                        <div key={i} className="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/5 hover:bg-white/10 transition-colors cursor-pointer">
-                                            <div className="w-10 h-10 bg-slate-800 rounded bg-cover" style={{backgroundImage: 'url(https://source.unsplash.com/random/100x100?sig=' + i + ')'}}></div>
-                                            <div className="overflow-hidden">
-                                                <div className="text-xs text-accent-blue font-mono mb-0.5">MATCH FOUND</div>
-                                                <div className="text-sm text-slate-300 truncate">social_media_repost_v{i}.jpg</div>
-                                                <div className="text-[10px] text-slate-500">First seen: 2 days ago</div>
-                                            </div>
-                                        </div>
-                                    ))}
                                 </div>
                             </div>
 
+                            {/* OSINT Card */}
+                            <div className="glass-panel p-6 rounded-2xl md:col-span-2">
+                                <div className="flex items-center gap-2 mb-4 text-accent-teal">
+                                    <Globe size={18} />
+                                    <h3 className="font-bold uppercase text-xs tracking-wider">Web Footprint</h3>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <div className="text-4xl font-bold text-white">
+                                        {report.details?.internet?.footprintAnalysis?.totalMatches || 0}
+                                    </div>
+                                    <div className="text-sm text-slate-400">
+                                        matches found across the<br/>open internet.
+                                    </div>
+                                </div>
+                            </div>
                         </motion.div>
                     )}
                 </AnimatePresence>
