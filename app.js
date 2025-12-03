@@ -5,8 +5,8 @@ import * as THREE from 'three';
 import { Shield, Upload, FileSearch, AlertTriangle, Lock, Globe, Activity, Zap, CheckCircle, X, CreditCard, LayoutGrid, Award } from 'lucide-react';
 
 // --- CONFIGURATION (FILL THESE IN) ---
-const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/auto/upload";
-const UPLOAD_PRESET = "YOUR_UPLOAD_PRESET"; 
+const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dphicbaf2/auto/upload";
+const UPLOAD_PRESET = "fhnvskdnf"; 
 const ORCHESTRATOR_URL = "https://orchestration-service.vercel.app/api/analyze"; // Your Vercel URL
 const PAYPAL_ME_LINK = "https://paypal.me/yourusername"; // Your PayPal Link
 
