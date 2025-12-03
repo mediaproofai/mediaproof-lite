@@ -1,50 +1,154 @@
-/* Cinematic Grain Overlay */
+/* -------------------------------------------------------------------------- */
+/* GLOBAL RESET                               */
+/* -------------------------------------------------------------------------- */
+:root {
+  --nav-height: 64px;
+}
+
+body {
+  background-color: #030305;
+  color: #e2e8f0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* -------------------------------------------------------------------------- */
+/* FORENSIC TEXTURES (THE "FBI" FEEL)                */
+/* -------------------------------------------------------------------------- */
+
+/* 1. CINEMATIC GRAIN */
+/* Adds a subtle noise layer to prevent "banding" on gradients and adds realism */
 .cinematic-grain {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    pointer-events: none; z-index: 50; opacity: 0.03;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
-/* Aurora Background Animation */
-@keyframes aurora {
-    0% { background-position: 50% 50%, 50% 50%; }
-    100% { background-position: 100% 0%, 0% 100%; }
-}
-
+/* 2. AURORA BACKGROUND MESH */
+/* The living, breathing background light */
 .aurora-bg {
-    position: fixed; inset: 0; z-index: -1;
-    background-image: 
-        radial-gradient(circle at 10% 10%, rgba(59, 130, 246, 0.15), transparent 40%),
-        radial-gradient(circle at 90% 90%, rgba(139, 92, 246, 0.1), transparent 40%);
-    filter: blur(60px);
-    animation: aurora 20s ease infinite alternate;
+  position: fixed;
+  inset: -50%;
+  z-index: -1;
+  background-image: 
+    radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.08), transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.05), transparent 40%),
+    radial-gradient(circle at 20% 80%, rgba(0, 194, 168, 0.05), transparent 40%);
+  filter: blur(80px);
+  animation: aurora-flow 25s ease infinite alternate;
+  opacity: 0.6;
 }
 
-/* Glassmorphism Utilities */
-.glass-panel {
-    background: var(--glass-surface);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--glass-border);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+@keyframes aurora-flow {
+  0% { transform: rotate(0deg) scale(1); }
+  100% { transform: rotate(5deg) scale(1.1); }
 }
 
-.glass-btn {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+/* 3. TACTICAL SCANLINES */
+/* Subtle horizontal lines used in HUD displays */
+.scanline {
+  position: relative;
+  overflow: hidden;
 }
-.glass-btn:hover {
-    background: rgba(255,255,255,0.1);
-    border-color: rgba(255,255,255,0.2);
-    transform: translateY(-1px);
-    box-shadow: 0 10px 20px -10px rgba(59, 130, 246, 0.3);
-}
-
-/* Scanline Effect */
 .scanline::after {
-    content: ""; position: absolute; inset: 0;
-    background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.3) 50%);
-    background-size: 100% 4px;
-    pointer-events: none; opacity: 0.1;
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0) 50%,
+    rgba(0, 0, 0, 0.2) 50%,
+    rgba(0, 0, 0, 0.2)
+  );
+  background-size: 100% 4px;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.15;
+}
+
+/* -------------------------------------------------------------------------- */
+/* GLASSMORPHISM SYSTEM                            */
+/* -------------------------------------------------------------------------- */
+
+/* Standard Glass Panel */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* Interactive Glass Button */
+.glass-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #e2e8f0;
+}
+
+.glass-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.3);
+  color: #fff;
+}
+
+.glass-btn:active {
+  transform: translateY(0px);
+}
+
+/* High-Emphasis Primary Button (The "Google Blue") */
+.btn-primary {
+  background: #3b82f6;
+  border: 1px solid #60a5fa;
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+  color: white;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: #2563eb;
+  box-shadow: 0 0 25px rgba(59, 130, 246, 0.6);
+}
+
+/* -------------------------------------------------------------------------- */
+/* UTILITIES                                     */
+/* -------------------------------------------------------------------------- */
+
+/* Hides scrollbar but allows scrolling */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Text Glow Effect for Critical Data */
+.text-glow {
+  text-shadow: 0 0 12px currentColor;
+}
+
+/* Code/Mono Text Styling */
+.font-mono-tight {
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: -0.02em;
+}
+
+/* Custom Selection Color */
+::selection {
+  background: rgba(59, 130, 246, 0.3);
+  color: white;
 }
