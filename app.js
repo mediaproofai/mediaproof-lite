@@ -5,9 +5,9 @@ import * as THREE from 'three';
 import { Shield, Upload, FileSearch, AlertTriangle, Lock, Globe, Activity, Zap, CheckCircle, X, CreditCard, LayoutGrid, Award, PlayCircle, History, Clock } from 'lucide-react';
 
 // --- CONFIGURATION (UPDATE THESE!) ---
-const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dxy87z1/auto/upload"; 
-const UPLOAD_PRESET = "ml_forensic_upload"; 
-const ORCHESTRATOR_URL = "https://mediaproof-orchestrator.yourname.workers.dev"; // Your Backend URL
+const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dphicbaf2/auto/upload"; 
+const UPLOAD_PRESET = "fhnvskdnf"; 
+const ORCHESTRATOR_URL = "https://mediaproofai.mediaproofai.workers.dev/"; // Your Backend URL
 const ADMIN_EMAIL = "mediaproofai@gmail.com";
 
 // --- PAYPAL LINKS (Create these in PayPal and paste here) ---
