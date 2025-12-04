@@ -11,45 +11,25 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="style.css">
-
-    <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: { 
-                        sans: ['Inter', 'system-ui', 'sans-serif'], 
-                        mono: ['JetBrains Mono', 'monospace'] 
-                    },
-                    colors: {
-                        bg: { 
-                            deep: '#030305', 
-                            panel: '#0A0A0F',
-                            surface: '#121218'
-                        },
-                        accent: { 
-                            blue: '#3B82F6', 
-                            purple: '#8B5CF6', 
-                            teal: '#00C2A8', 
-                            danger: '#EF4444',
-                            warning: '#F59E0B'
-                        },
-                        glass: {
-                            border: 'rgba(255, 255, 255, 0.08)',
-                            surface: 'rgba(255, 255, 255, 0.03)'
-                        }
-                    },
-                    animation: { 
-                        'aurora': 'aurora 20s ease infinite alternate',
-                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-                    }
-                }
-            }
-        }
+        window.onerror = function(msg, url, line, col, error) {
+            document.getElementById('root').innerHTML = `
+                <div style="color:#ff5555; background:#0f0f13; padding:40px; font-family:monospace; height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+                    <h1 style="font-size:24px; margin-bottom:20px;">⚠️ SYSTEM CRITICAL ERROR</h1>
+                    <div style="background:#1a1a1a; padding:20px; border:1px solid #ff5555; border-radius:8px; max-width:600px;">
+                        <p style="color:#fff; margin-bottom:10px;"><strong>Message:</strong> ${msg}</p>
+                        <p style="color:#888;"><strong>Location:</strong> Line ${line}, Column ${col}</p>
+                    </div>
+                    <button onclick="window.location.reload()" style="margin-top:20px; padding:10px 20px; background:#fff; border:none; cursor:pointer; font-weight:bold;">REBOOT SYSTEM</button>
+                </div>
+            `;
+            return false;
+        };
     </script>
 
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
     <script type="importmap">
         {
             "imports": {
@@ -64,13 +44,540 @@
         }
     </script>
 
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { 
+                        sans: ['Inter', 'system-ui', 'sans-serif'], 
+                        mono: ['JetBrains Mono', 'monospace'] 
+                    },
+                    colors: {
+                        bg: { deep: '#030305', panel: '#0A0A0F', surface: '#121218' },
+                        accent: { blue: '#3B82F6', purple: '#8B5CF6', teal: '#00C2A8', danger: '#EF4444', warning: '#F59E0B' },
+                        glass: { border: 'rgba(255, 255, 255, 0.08)', surface: 'rgba(255, 255, 255, 0.03)' }
+                    },
+                    animation: { 
+                        'aurora': 'aurora 25s ease infinite alternate',
+                        'scan': 'scan 4s ease-in-out infinite'
+                    },
+                    keyframes: {
+                        aurora: { '0%': { opacity: 0.5 }, '100%': { opacity: 0.8, transform: 'scale(1.1)' } }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #030305; color: #e2e8f0; overflow-x: hidden; }
+        
+        /* Cinematic Grain Texture */
+        .cinematic-grain {
+            position: fixed; inset: 0; pointer-events: none; z-index: 50; opacity: 0.04;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        /* Aurora Background */
+        .aurora-bg {
+            position: fixed; inset: -50%; z-index: -1; filter: blur(100px);
+            background: radial-gradient(circle at 50% 50%, rgba(59,130,246,0.1), transparent 50%),
+                        radial-gradient(circle at 80% 20%, rgba(139,92,246,0.08), transparent 40%);
+            animation: aurora-flow 25s ease infinite alternate;
+        }
+
+        /* Glass Panels */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Text Glow */
+        .text-glow { text-shadow: 0 0 15px currentColor; }
+        
+        /* Scrollbar Hiding */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
 </head>
-<body class="bg-bg-deep text-slate-200 antialiased overflow-x-hidden selection:bg-accent-blue/30 selection:text-white">
+<body>
     
     <div id="root"></div>
 
-    <script type="text/babel" data-type="module" src="./app.js"></script>
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useRef } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { motion, AnimatePresence } from 'framer-motion';
+        import * as THREE from 'three';
+        import { Shield, Upload, FileSearch, AlertTriangle, X, CheckCircle, Activity, PlayCircle, History, Clock, Zap, Lock, Globe } from 'lucide-react';
 
+        // ==========================================================================================
+        //  CONFIGURATION ZONE - START EDITING HERE
+        // ==========================================================================================
+        
+        const CONFIG = {
+            // 1. CLOUDINARY UPLOAD SETTINGS
+            CLOUDINARY_URL: "https://api.cloudinary.com/v1_1/dphicbaf2/auto/upload",
+            UPLOAD_PRESET: "yhqlojie",
+
+            // 2. BACKEND ORCHESTRATOR
+            ORCHESTRATOR_URL: "https://mediaproofai.mediaproofai.workers.dev",
+
+            // 3. ADMIN ACCESS
+            ADMIN_EMAIL: "mediaproofai@gmail.com",
+
+            // 4. PAYPAL PAYMENT LINKS
+            PAYPAL: {
+                BASIC: "https://www.paypal.com/ncp/payment/JY5W5KLERV59A",
+                PRO: "https://www.paypal.com/ncp/payment/YP9Y6QKQUZT3C",
+                BUSINESS: "https://www.paypal.com/ncp/payment/Z6LYJSUY5GPBQ"
+            }
+        };
+
+        // ==========================================================================================
+        //  END CONFIGURATION - DO NOT EDIT BELOW THIS LINE UNLESS YOU ARE A DEVELOPER
+        // ==========================================================================================
+
+        const PLANS = {
+            FREE: { name: "Starter", limit: 2, speed: 4000, features: ["image"], history: false },
+            BASIC: { name: "Essential", limit: 10, speed: 2000, features: ["image"], history: false },
+            PRO: { name: "Pro", limit: 25, speed: 1000, features: ["image", "video", "audio"], history: true },
+            BUSINESS: { name: "Unlimited", limit: 9999, speed: 500, features: ["image", "video", "audio"], history: true }
+        };
+
+        // --- COMPONENT: 3D HERO (THREE.JS) ---
+        const Hero3D = () => {
+            const mountRef = useRef(null);
+            useEffect(() => {
+                if (!mountRef.current) return;
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+                const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+                renderer.setSize(400, 400);
+                mountRef.current.appendChild(renderer.domElement);
+                
+                // Abstract Forensic Core
+                const geometry = new THREE.IcosahedronGeometry(1.4, 0);
+                const material = new THREE.MeshNormalMaterial({ wireframe: true, transparent: true, opacity: 0.5 });
+                const sphere = new THREE.Mesh(geometry, material);
+                scene.add(sphere);
+
+                const coreGeo = new THREE.IcosahedronGeometry(0.6, 2);
+                const coreMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, wireframe: true });
+                const core = new THREE.Mesh(coreGeo, coreMat);
+                scene.add(core);
+
+                camera.position.z = 3.5;
+
+                let animationId;
+                const animate = () => {
+                    animationId = requestAnimationFrame(animate);
+                    sphere.rotation.x += 0.002;
+                    sphere.rotation.y += 0.003;
+                    core.rotation.x -= 0.005;
+                    core.rotation.y -= 0.005;
+                    renderer.render(scene, camera);
+                };
+                animate();
+
+                return () => {
+                    cancelAnimationFrame(animationId);
+                    if (mountRef.current) mountRef.current.innerHTML = '';
+                };
+            }, []);
+            return <div ref={mountRef} className="pointer-events-none opacity-60 mix-blend-screen" />;
+        };
+
+        // --- COMPONENT: PRICING MODAL ---
+        const PricingModal = ({ onClose }) => (
+            <motion.div 
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md"
+            >
+                <div className="bg-[#0f0f13] border border-white/10 rounded-2xl p-6 max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+                    <div className="flex justify-between items-center mb-8">
+                        <div>
+                            <h2 className="text-3xl font-bold text-white">Select Enterprise Tier</h2>
+                            <p className="text-slate-400">Unlock forensic capabilities at scale.</p>
+                        </div>
+                        <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors"><X/></button>
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-6">
+                        {/* ESSENTIAL */}
+                        <div className="glass-panel p-6 rounded-xl hover:border-accent-teal/50 transition-colors">
+                            <h3 className="text-lg font-bold text-white">Essential</h3>
+                            <div className="text-3xl font-bold text-accent-teal my-3">$2.99<span className="text-sm text-slate-500">/mo</span></div>
+                            <ul className="text-sm text-slate-400 space-y-3 mb-6 font-mono">
+                                <li className="flex gap-2"><CheckCircle size={16}/> 10 Checks / Day</li>
+                                <li className="flex gap-2"><CheckCircle size={16}/> No Ads</li>
+                                <li className="flex gap-2"><CheckCircle size={16}/> Standard Speed</li>
+                            </ul>
+                            <a href={CONFIG.PAYPAL.BASIC} target="_blank" className="block text-center py-3 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold transition-all">
+                                Select Plan
+                            </a>
+                        </div>
+
+                        {/* PRO */}
+                        <div className="glass-panel p-6 rounded-xl border-accent-blue/50 relative bg-accent-blue/5 transform scale-105 shadow-2xl shadow-blue-900/20">
+                            <div className="absolute top-0 right-0 bg-accent-blue text-[10px] font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">RECOMMENDED</div>
+                            <h3 className="text-lg font-bold text-white">Pro Forensic</h3>
+                            <div className="text-3xl font-bold text-accent-blue my-3">$3.99<span className="text-sm text-slate-500">/mo</span></div>
+                            <ul className="text-sm text-slate-300 space-y-3 mb-6 font-mono">
+                                <li className="flex gap-2"><CheckCircle size={16}/> 25 Checks / Day</li>
+                                <li className="flex gap-2"><CheckCircle size={16} className="text-accent-blue"/> Video & Audio Engine</li>
+                                <li className="flex gap-2"><CheckCircle size={16}/> 30-Day History Vault</li>
+                                <li className="flex gap-2"><CheckCircle size={16}/> Priority Queue</li>
+                            </ul>
+                            <a href={CONFIG.PAYPAL.PRO} target="_blank" className="block text-center py-3 rounded-lg bg-accent-blue hover:bg-blue-600 text-white font-bold transition-all">
+                                Upgrade to Pro
+                            </a>
+                        </div>
+
+                        {/* BUSINESS */}
+                        <div className="glass-panel p-6 rounded-xl hover:border-accent-purple/50 transition-colors">
+                            <h3 className="text-lg font-bold text-white">Unlimited</h3>
+                            <div className="text-3xl font-bold text-accent-purple my-3">$6.99<span className="text-sm text-slate-500">/mo</span></div>
+                            <ul className="text-sm text-slate-400 space-y-3 mb-6 font-mono">
+                                <li className="flex gap-2"><CheckCircle size={16} className="text-accent-purple"/> Unlimited Volume</li>
+                                <li className="flex gap-2"><CheckCircle size={16}/> Instant Processing</li>
+                                <li className="flex gap-2"><CheckCircle size={16}/> 3 Team Seats</li>
+                                <li className="flex gap-2"><CheckCircle size={16}/> API Key Access</li>
+                            </ul>
+                            <a href={CONFIG.PAYPAL.BUSINESS} target="_blank" className="block text-center py-3 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold transition-all">
+                                Go Unlimited
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </motion.div>
+        );
+
+        // --- COMPONENT: AD OVERLAY ---
+        const AdOverlay = ({ onComplete }) => {
+            const [timer, setTimer] = useState(5);
+            useEffect(() => {
+                const i = setInterval(() => setTimer(t => t > 0 ? t - 1 : 0), 1000);
+                const t = setTimeout(onComplete, 5000);
+                return () => { clearInterval(i); clearTimeout(t); };
+            }, []);
+
+            return (
+                <div className="fixed inset-0 z-[120] bg-black flex flex-col items-center justify-center text-center">
+                    <Zap className="text-accent-warning w-16 h-16 mb-4 animate-bounce" />
+                    <h2 className="text-2xl font-bold text-white mb-2">Generating Free Credit...</h2>
+                    <p className="text-slate-400 mb-8">Please wait while we verify resources.</p>
+                    <div className="text-4xl font-mono font-bold text-white">{timer}s</div>
+                </div>
+            );
+        };
+
+        // --- MAIN APPLICATION LOGIC ---
+        const App = () => {
+            // State
+            const [user, setUser] = useState(null);
+            const [view, setView] = useState('landing');
+            const [file, setFile] = useState(null);
+            const [report, setReport] = useState(null);
+            const [showPricing, setShowPricing] = useState(false);
+            const [showAd, setShowAd] = useState(false);
+            const [logs, setLogs] = useState([]);
+            const [history, setHistory] = useState([]);
+
+            // Init
+            useEffect(() => {
+                const u = localStorage.getItem('mediaproof_user');
+                if (u) checkDailyReset(JSON.parse(u));
+                const h = localStorage.getItem('mediaproof_history');
+                if (h) setHistory(JSON.parse(h));
+            }, []);
+
+            // Utilities
+            const checkDailyReset = (u) => {
+                const last = new Date(u.lastLogin).toDateString();
+                const today = new Date().toDateString();
+                let updated = { ...u, plan: PLANS[u.planKey || 'FREE'] };
+                if (last !== today) {
+                    updated.credits = u.email === CONFIG.ADMIN_EMAIL ? 999999 : updated.plan.limit;
+                    updated.lastLogin = new Date().toISOString();
+                    localStorage.setItem('mediaproof_user', JSON.stringify(updated));
+                }
+                setUser(updated);
+            };
+
+            const login = () => {
+                const email = prompt("Enter your email address:");
+                if (!email) return;
+
+                if (email.toLowerCase() === CONFIG.ADMIN_EMAIL) {
+                    const admin = { email, planKey: 'BUSINESS', credits: 999999, lastLogin: new Date().toISOString() };
+                    setUser({ ...admin, plan: PLANS.BUSINESS });
+                    localStorage.setItem('mediaproof_user', JSON.stringify(admin));
+                    return;
+                }
+
+                // Demo Flow
+                const choice = prompt("Demo: Choose Plan (free, basic, pro, business)", "free");
+                const key = choice ? choice.toUpperCase() : 'FREE';
+                const plan = PLANS[key] || PLANS.FREE;
+                const newUser = { email, planKey: key, credits: plan.limit, lastLogin: new Date().toISOString() };
+                setUser({ ...newUser, plan });
+                localStorage.setItem('mediaproof_user', JSON.stringify(newUser));
+            };
+
+            const upload = async (e) => {
+                if (!user) return login();
+                if (user.credits <= 0) {
+                    return user.planKey === 'FREE' ? setShowAd(true) : setShowPricing(true);
+                }
+
+                const f = e.target.files?.[0];
+                if (!f) return;
+
+                if (!f.type.startsWith('image') && !user.plan.features.includes('video')) {
+                    alert("Video/Audio analysis requires PRO plan.");
+                    setShowPricing(true);
+                    return;
+                }
+
+                setFile(f);
+                setView('scanning');
+                setLogs(["Initializing secure environment...", "Encrypting payload...", "Uploading to secure cloud..."]);
+
+                try {
+                    // 1. Upload
+                    const fd = new FormData();
+                    fd.append('file', f);
+                    fd.append('upload_preset', CONFIG.UPLOAD_PRESET);
+                    
+                    const res1 = await fetch(CONFIG.CLOUDINARY_URL, { method: 'POST', body: fd });
+                    const data1 = await res1.json();
+                    
+                    if (!data1.secure_url) throw new Error("Cloud upload failed");
+                    
+                    setLogs(prev => [...prev, "Upload successful.", "Handshaking with Neural Engine...", "Analyzing artifacts..."]);
+
+                    // 2. Orchestrate
+                    const res2 = await fetch(CONFIG.ORCHESTRATOR_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            mediaUrl: data1.secure_url,
+                            type: f.type.startsWith('image') ? 'image' : f.type.startsWith('audio') ? 'audio' : 'video'
+                        })
+                    });
+
+                    const data2 = await res2.json();
+                    setReport(data2);
+
+                    // 3. Finalize
+                    setTimeout(() => {
+                        if (user.email !== CONFIG.ADMIN_EMAIL) {
+                            const upd = { ...user, credits: user.credits - 1 };
+                            setUser(upd);
+                            localStorage.setItem('mediaproof_user', JSON.stringify(upd));
+                        }
+                        
+                        // Add History
+                        if (user.plan.history) {
+                            const entry = { id: Date.now(), name: f.name, score: data2.risk?.globalScore || 0, date: new Date().toLocaleDateString() };
+                            const newHist = [entry, ...history].slice(0, 50);
+                            setHistory(newHist);
+                            localStorage.setItem('mediaproof_history', JSON.stringify(newHist));
+                        }
+
+                        setView('results');
+                    }, user.plan.speed);
+
+                } catch (err) {
+                    console.error(err);
+                    alert("Error: " + err.message);
+                    setView('landing');
+                }
+            };
+
+            const handleAdComplete = () => {
+                setShowAd(false);
+                const upd = { ...user, credits: user.credits + 1 };
+                setUser(upd);
+                localStorage.setItem('mediaproof_user', JSON.stringify(upd));
+                alert("Credit added! Please try upload again.");
+            };
+
+            // Render
+            return (
+                <div className="min-h-screen pt-20 relative font-sans text-slate-200">
+                    <div className="cinematic-grain"></div>
+                    <div className="aurora-bg"></div>
+
+                    {/* NAVBAR */}
+                    <nav className="fixed top-0 w-full z-40 bg-black/80 backdrop-blur-md h-20 border-b border-white/10 flex items-center">
+                        <div className="max-w-7xl mx-auto px-6 w-full flex items-center justify-between">
+                            <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('landing')}>
+                                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-blue to-accent-purple flex items-center justify-center shadow-lg shadow-blue-500/20">
+                                    <Shield className="text-white" size={20}/> 
+                                </div>
+                                <div>
+                                    <h1 className="font-bold text-xl leading-none">MediaProof</h1>
+                                    <span className="text-[10px] text-accent-blue font-mono uppercase tracking-widest">Enterprise</span>
+                                </div>
+                            </div>
+                            <div className="flex gap-4 text-xs font-bold items-center">
+                                {user ? (
+                                    <>
+                                        {user.plan.history && <button onClick={() => setView('history')} className="hidden md:flex gap-2 text-slate-400 hover:text-white"><History size={14}/> HISTORY</button>}
+                                        <div className="h-8 w-[1px] bg-white/10 mx-2"></div>
+                                        <span className={`uppercase ${user.planKey === 'BUSINESS' ? 'text-accent-purple' : 'text-accent-teal'}`}>{user.plan.name}</span>
+                                        <span className="text-slate-500">|</span>
+                                        <span className="font-mono text-white text-sm">{user.email === CONFIG.ADMIN_EMAIL ? '∞' : user.credits} CR</span>
+                                        <button onClick={() => setShowPricing(true)} className="px-4 py-2 bg-white/10 rounded-md hover:bg-white/20 transition-all border border-white/5">UPGRADE</button>
+                                    </>
+                                ) : (
+                                    <button onClick={login} className="px-6 py-2 bg-accent-blue hover:bg-blue-600 rounded-md text-white transition-all shadow-lg shadow-blue-500/30">SIGN IN</button>
+                                )}
+                            </div>
+                        </div>
+                    </nav>
+
+                    {showPricing && <PricingModal onClose={() => setShowPricing(false)} />}
+                    {showAd && <AdOverlay onComplete={handleAdComplete} />}
+
+                    <main className="container mx-auto px-4 py-8 flex flex-col items-center justify-center min-h-[85vh]">
+                        <AnimatePresence mode="wait">
+                            
+                            {/* LANDING VIEW */}
+                            {view === 'landing' && (
+                                <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="text-center w-full max-w-4xl relative z-10">
+                                    <div className="flex justify-center mb-8"><Hero3D /></div>
+                                    <h1 className="text-6xl md:text-8xl font-bold tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-b from-white via-slate-200 to-slate-500">
+                                        Verify Reality.
+                                    </h1>
+                                    <p className="text-xl text-slate-400 mb-12 max-w-2xl mx-auto">
+                                        The industry standard for automated media forensics.<br/>
+                                        Detect deepfakes, recover metadata, and verify origin.
+                                    </p>
+                                    <div className="relative group max-w-xl mx-auto">
+                                        <div className="absolute -inset-1 bg-gradient-to-r from-accent-blue to-accent-purple rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-500"></div>
+                                        <label className="relative flex flex-col items-center justify-center h-64 bg-[#0f0f13]/90 rounded-2xl border border-white/10 cursor-pointer overflow-hidden backdrop-blur-xl hover:border-accent-blue/50 transition-colors">
+                                            <Upload className="w-12 h-12 text-slate-500 mb-4 group-hover:text-accent-blue transition-colors" />
+                                            <span className="text-lg font-medium text-slate-300">Drop media to initiate scan</span>
+                                            <span className="text-xs text-slate-500 mt-2 font-mono uppercase tracking-widest">
+                                                {user?.planKey === 'FREE' || user?.planKey === 'BASIC' ? 'Images Only' : 'JPG • PNG • MP4 • WAV'}
+                                            </span>
+                                            <input type="file" className="hidden" onChange={upload} />
+                                        </label>
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {/* SCANNING VIEW */}
+                            {view === 'scanning' && (
+                                <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="w-full max-w-lg text-center">
+                                    <Activity className="w-16 h-16 text-accent-blue mx-auto mb-8 animate-pulse" />
+                                    <h2 className="text-2xl font-mono text-accent-blue mb-6 tracking-widest">PROCESSING ARTIFACTS...</h2>
+                                    <div className="bg-black/40 p-6 rounded-xl text-left font-mono text-xs text-green-400 h-64 overflow-y-auto border border-white/10 shadow-2xl">
+                                        {logs.map((l, i) => (
+                                            <motion.div key={i} initial={{opacity:0, x:-10}} animate={{opacity:1, x:0}} className="mb-2 border-l-2 border-accent-teal pl-2">
+                                                <span className="text-slate-500">{new Date().toLocaleTimeString()}</span> {l}
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {/* RESULTS VIEW */}
+                            {view === 'results' && report && (
+                                <motion.div initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-12 gap-6">
+                                    
+                                    {/* Main Score Card */}
+                                    <div className="md:col-span-8 glass-panel p-10 rounded-3xl relative overflow-hidden flex flex-col justify-between min-h-[400px]">
+                                        <div className={`absolute top-0 right-0 p-10 opacity-10 ${report.risk?.globalScore > 50 ? 'text-red-500' : 'text-green-500'}`}>
+                                            <Shield size={300} />
+                                        </div>
+                                        <div>
+                                            <div className="text-sm font-mono text-slate-500 uppercase tracking-widest mb-4">Global Trust Score</div>
+                                            <div className={`text-9xl font-black tracking-tighter text-glow ${report.risk?.globalScore > 50 ? 'text-red-500' : 'text-green-500'}`}>
+                                                {100 - (report.risk?.globalScore || 0)}
+                                            </div>
+                                            <div className="text-2xl text-slate-400 font-medium">/ 100</div>
+                                        </div>
+                                        
+                                        <div className="mt-8 pt-8 border-t border-white/10">
+                                            <h3 className="text-sm font-bold text-slate-300 uppercase mb-2">Forensic Verdict</h3>
+                                            <p className="text-lg text-slate-400 leading-relaxed">{report.risk?.executiveSummary || "No significant anomalies found."}</p>
+                                        </div>
+
+                                        {user?.planKey === 'FREE' && (
+                                            <div className="absolute bottom-6 right-6 text-5xl font-black text-white/5 -rotate-12 pointer-events-none select-none">
+                                                FREE TIER
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Metadata & Actions */}
+                                    <div className="md:col-span-4 flex flex-col gap-6">
+                                        <div className="glass-panel p-6 rounded-2xl flex-1">
+                                            <div className="flex items-center gap-2 mb-6 text-accent-purple">
+                                                <FileSearch size={20} />
+                                                <h3 className="font-bold uppercase text-xs tracking-wider">File Metadata</h3>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div className="flex justify-between border-b border-white/5 pb-2">
+                                                    <span className="text-xs text-slate-500">TYPE</span>
+                                                    <span className="text-sm font-mono text-white">{file?.type}</span>
+                                                </div>
+                                                <div className="flex justify-between border-b border-white/5 pb-2">
+                                                    <span className="text-xs text-slate-500">SIZE</span>
+                                                    <span className="text-sm font-mono text-white">{(file?.size/1024/1024).toFixed(2)} MB</span>
+                                                </div>
+                                                <div className="pt-2">
+                                                    <span className="text-xs text-slate-500 block mb-1">SOFTWARE SIGNATURE</span>
+                                                    <span className="text-sm font-mono text-accent-danger">{report.details?.metadata?.deviceFingerprint?.software || "CLEAN"}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <button onClick={() => setView('landing')} className="w-full py-5 rounded-xl bg-white text-black font-bold hover:bg-slate-200 transition-colors text-lg shadow-xl shadow-white/10">
+                                            Start New Investigation
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {/* HISTORY VIEW */}
+                            {view === 'history' && (
+                                <motion.div initial={{opacity:0}} animate={{opacity:1}} className="w-full max-w-4xl">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h2 className="text-3xl font-bold">Case History</h2>
+                                        <button onClick={() => setView('landing')}><X/></button>
+                                    </div>
+                                    <div className="glass-panel rounded-2xl overflow-hidden">
+                                        {history.length === 0 ? <div className="p-10 text-center text-slate-500">No records found.</div> : 
+                                            history.map(h => (
+                                                <div key={h.id} className="p-4 border-b border-white/5 flex items-center justify-between hover:bg-white/5">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className={`w-3 h-3 rounded-full ${h.score > 50 ? 'bg-red-500' : 'bg-green-500'}`}/>
+                                                        <span className="font-medium text-white">{h.name}</span>
+                                                    </div>
+                                                    <div className="font-mono text-sm text-slate-500">{h.date}</div>
+                                                </div>
+                                            ))
+                                        }
+                                    </div>
+                                </motion.div>
+                            )}
+
+                        </AnimatePresence>
+                    </main>
+                </div>
+            );
+        };
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 </html>
