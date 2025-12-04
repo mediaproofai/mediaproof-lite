@@ -8,11 +8,11 @@
     <script>
         window.onerror = function(msg, url, line, col, error) {
             document.body.innerHTML = `
-                <div style="background:black; color:red; padding:20px; font-family:monospace; height:100vh; display:flex; flex-direction:column; justify-content:center; text-align:center;">
-                    <h1 style="font-size:30px;">⚠️ SYSTEM BOOT FAILURE</h1>
-                    <p>${msg}</p>
-                    <p style="color:gray">Line: ${line}</p>
-                    <button onclick="window.location.reload()" style="margin-top:20px; padding:10px; background:white; border:none; cursor:pointer;">REBOOT</button>
+                <div style="background:#050505; color:#ef4444; padding:40px; font-family:monospace; height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+                    <h1 style="font-size:24px; margin-bottom:16px;">⚠️ SYSTEM RENDER FAILURE</h1>
+                    <p style="color:#e5e7eb; margin-bottom:8px;">${msg}</p>
+                    <p style="color:#6b7280; font-size:12px;">Line: ${line} | Col: ${col}</p>
+                    <button onclick="window.location.reload()" style="margin-top:24px; padding:12px 24px; background:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">REBOOT SYSTEM</button>
                 </div>`;
             return false;
         };
@@ -29,11 +29,13 @@
                 extend: {
                     fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
                     colors: { bg: { deep: '#030305', panel: '#0A0A0F' }, accent: { blue: '#3B82F6', purple: '#8B5CF6', teal: '#00C2A8' } },
-                    animation: { 'aurora': 'aurora 25s ease infinite alternate' }
+                    animation: { 'aurora': 'aurora 25s ease infinite alternate' },
+                    keyframes: { aurora: { '0%': { opacity: 0.5, transform: 'scale(1)' }, '100%': { opacity: 0.8, transform: 'scale(1.1)' } } }
                 }
             }
         }
     </script>
+
     <style>
         body { background-color: #030305; color: #e2e8f0; overflow-x: hidden; }
         .cinematic-grain {
@@ -45,7 +47,6 @@
             background: radial-gradient(circle at 50% 50%, rgba(59,130,246,0.1), transparent 50%), radial-gradient(circle at 80% 20%, rgba(139,92,246,0.08), transparent 40%);
             animation: aurora-flow 25s ease infinite alternate;
         }
-        @keyframes aurora-flow { 0% { transform: scale(1); } 100% { transform: scale(1.1); } }
         .glass-panel {
             background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.06); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
@@ -57,11 +58,11 @@
     <script type="importmap">
     {
         "imports": {
-            "react": "https://esm.sh/react@18.2.0?dev",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client?dev",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?dev",
+            "react": "https://esm.sh/react@18.2.0",
+            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom",
             "three": "https://esm.sh/three@0.160.0",
-            "lucide-react": "https://esm.sh/lucide-react@0.292.0?dev",
+            "lucide-react": "https://esm.sh/lucide-react@0.292.0?external=react,react-dom",
             "clsx": "https://esm.sh/clsx@2.0.0",
             "tailwind-merge": "https://esm.sh/tailwind-merge@2.1.0"
         }
@@ -78,7 +79,7 @@
         import * as THREE from 'three';
         import { Shield, Upload, FileSearch, AlertTriangle, X, CheckCircle, Activity, History, Zap } from 'lucide-react';
 
-        // --- PRE-FILLED CONFIGURATION ---
+        // --- PRE-FILLED KEYS ---
         const CONFIG = {
             CLOUDINARY_URL: "https://api.cloudinary.com/v1_1/dphicbaf2/auto/upload",
             UPLOAD_PRESET: "yhqlojie",
@@ -98,7 +99,6 @@
             BUSINESS: { name: "Unlimited", limit: 9999, speed: 500, features: ["image", "video", "audio"], history: true }
         };
 
-        // --- 3D HERO ---
         const Hero3D = () => {
             const mountRef = useRef(null);
             useEffect(() => {
@@ -127,7 +127,6 @@
             return <div ref={mountRef} className="pointer-events-none opacity-60 mix-blend-screen" />;
         };
 
-        // --- PRICING MODAL ---
         const PricingModal = ({ onClose }) => (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
                 <div className="bg-[#0f0f13] border border-white/10 rounded-2xl p-6 max-w-6xl w-full max-h-[90vh] overflow-y-auto">
@@ -136,7 +135,6 @@
                         <button onClick={onClose}><X/></button>
                     </div>
                     <div className="grid md:grid-cols-3 gap-6">
-                        {/* Plans */}
                         {['Essential', 'Pro', 'Unlimited'].map((tier, i) => (
                             <div key={tier} className="glass-panel p-6 rounded-xl hover:border-accent-blue/50 transition-colors">
                                 <h3 className="text-lg font-bold text-white">{tier}</h3>
@@ -149,7 +147,6 @@
             </motion.div>
         );
 
-        // --- MAIN APP ---
         const App = () => {
             const [user, setUser] = useState(null);
             const [view, setView] = useState('landing');
@@ -183,7 +180,6 @@
                 if (!email) return;
                 const isAdmin = email.toLowerCase() === CONFIG.ADMIN_EMAIL;
                 const key = isAdmin ? 'BUSINESS' : 'FREE'; 
-                // In demo, everyone starts FREE unless admin. Real app would check database.
                 const newUser = { email, planKey: key, credits: isAdmin ? 999999 : PLANS[key].limit, lastLogin: new Date().toISOString() };
                 setUser({ ...newUser, plan: PLANS[key] });
                 localStorage.setItem('mediaproof_user', JSON.stringify(newUser));
