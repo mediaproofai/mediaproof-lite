@@ -4,24 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MediaProof | Enterprise Forensic Intelligence</title>
+    <meta name="description" content="Automated media forensics and deepfake detection platform.">
+    <meta name="theme-color" content="#030305">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
     
+    <link rel="stylesheet" href="style.css">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
-                    colors: {
-                        bg: { deep: '#030305', panel: '#0A0A0F' },
-                        accent: { blue: '#3B82F6', purple: '#8B5CF6', teal: '#00C2A8', danger: '#EF4444' }
+                    fontFamily: { 
+                        sans: ['Inter', 'system-ui', 'sans-serif'], 
+                        mono: ['JetBrains Mono', 'monospace'] 
                     },
-                    animation: { 'aurora': 'aurora 20s ease infinite alternate' }
+                    colors: {
+                        bg: { 
+                            deep: '#030305', 
+                            panel: '#0A0A0F',
+                            surface: '#121218'
+                        },
+                        accent: { 
+                            blue: '#3B82F6', 
+                            purple: '#8B5CF6', 
+                            teal: '#00C2A8', 
+                            danger: '#EF4444',
+                            warning: '#F59E0B'
+                        },
+                        glass: {
+                            border: 'rgba(255, 255, 255, 0.08)',
+                            surface: 'rgba(255, 255, 255, 0.03)'
+                        }
+                    },
+                    animation: { 
+                        'aurora': 'aurora 20s ease infinite alternate',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                    }
                 }
             }
         }
@@ -43,8 +66,11 @@
 
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body class="bg-bg-deep text-slate-200 antialiased overflow-x-hidden selection:bg-accent-blue/30">
+<body class="bg-bg-deep text-slate-200 antialiased overflow-x-hidden selection:bg-accent-blue/30 selection:text-white">
+    
     <div id="root"></div>
+
     <script type="text/babel" data-type="module" src="./app.js"></script>
+
 </body>
 </html>
