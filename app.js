@@ -6,7 +6,7 @@ import { Shield, Upload, FileSearch, AlertTriangle, Lock, Globe, Activity, Zap, 
 
 // --- CONFIGURATION (UPDATE THESE!) ---
 const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dphicbaf2/auto/upload"; 
-const UPLOAD_PRESET = "fhnvskdnf"; 
+const UPLOAD_PRESET = "yhqlojie"; 
 const ORCHESTRATOR_URL = "https://mediaproofai.mediaproofai.workers.dev/"; // Your Backend URL
 const ADMIN_EMAIL = "mediaproofai@gmail.com";
 
