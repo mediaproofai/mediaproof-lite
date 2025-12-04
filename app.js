@@ -12,7 +12,7 @@ const ADMIN_EMAIL = "mediaproofai@gmail.com";
 
 // --- PAYPAL LINKS (Create these in PayPal and paste here) ---
 const LINKS = {
-    BASIC: "https://paypal.me/mediaproofai/2.99",
+    BASIC: "https://www.paypal.com/ncp/payment/JY5W5KLERV59A",
     PRO: "https://paypal.me/mediaproofai/3.99",
     BUSINESS: "https://paypal.me/mediaproofai/6.99"
 };
