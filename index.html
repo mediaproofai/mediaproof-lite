@@ -3,56 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MediaProof | Enterprise Forensic Intelligence</title>
-    
-    <script>
-        window.onerror = function(msg, url, line, col, error) {
-            document.body.innerHTML = `
-                <div style="background:#050505; color:#ef4444; padding:40px; font-family:monospace; height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
-                    <h1 style="font-size:24px; margin-bottom:16px;">⚠️ SYSTEM RENDER FAILURE</h1>
-                    <p style="color:#e5e7eb; margin-bottom:8px;">${msg}</p>
-                    <p style="color:#6b7280; font-size:12px;">Line: ${line} | Col: ${col}</p>
-                    <button onclick="window.location.reload()" style="margin-top:24px; padding:12px 24px; background:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">REBOOT SYSTEM</button>
-                </div>`;
-            return false;
-        };
-    </script>
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <title>MediaProof Enterprise | The Truth Layer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
-                    colors: { bg: { deep: '#030305', panel: '#0A0A0F' }, accent: { blue: '#3B82F6', purple: '#8B5CF6', teal: '#00C2A8' } },
-                    animation: { 'aurora': 'aurora 25s ease infinite alternate' },
-                    keyframes: { aurora: { '0%': { opacity: 0.5, transform: 'scale(1)' }, '100%': { opacity: 0.8, transform: 'scale(1.1)' } } }
+                    colors: { 
+                        bg: { deep: '#030305', panel: '#0A0A0F', surface: '#121218' },
+                        accent: { blue: '#3B82F6', purple: '#8B5CF6', teal: '#00C2A8', danger: '#EF4444', warning: '#F59E0B' },
+                        glass: { border: 'rgba(255, 255, 255, 0.08)', surface: 'rgba(255, 255, 255, 0.03)' }
+                    },
+                    animation: { 
+                        'aurora': 'aurora 25s ease infinite alternate',
+                        'scan-line': 'scan-line 3s linear infinite',
+                        'float': 'float 6s ease-in-out infinite'
+                    },
+                    keyframes: {
+                        aurora: { '0%': { opacity: 0.5, transform: 'scale(1) rotate(0deg)' }, '100%': { opacity: 0.8, transform: 'scale(1.1) rotate(5deg)' } },
+                        'scan-line': { '0%': { transform: 'translateY(-100%)' }, '100%': { transform: 'translateY(500%)' } },
+                        float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-20px)' } }
+                    },
+                    backgroundImage: {
+                        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+                        'glass-gradient': 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%)'
+                    }
                 }
             }
         }
     </script>
 
     <style>
+        /* Global Styles & FX */
         body { background-color: #030305; color: #e2e8f0; overflow-x: hidden; }
-        .cinematic-grain {
-            position: fixed; inset: 0; pointer-events: none; z-index: 50; opacity: 0.04;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-        }
-        .aurora-bg {
-            position: fixed; inset: -50%; z-index: -1; filter: blur(100px); opacity: 0.6;
-            background: radial-gradient(circle at 50% 50%, rgba(59,130,246,0.1), transparent 50%), radial-gradient(circle at 80% 20%, rgba(139,92,246,0.08), transparent 40%);
-            animation: aurora-flow 25s ease infinite alternate;
-        }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.06); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-        }
+        .cinematic-grain { position: fixed; inset: 0; pointer-events: none; z-index: 50; opacity: 0.04; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); }
+        .aurora-bg { position: fixed; inset: -50%; z-index: -1; filter: blur(100px); background: radial-gradient(circle at 50% 50%, rgba(59,130,246,0.15), transparent 50%), radial-gradient(circle at 80% 20%, rgba(139,92,246,0.1), transparent 40%); animation: aurora-flow 25s ease infinite alternate; }
+        .glass-panel { background: var(--glass-surface); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--glass-border); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); transition: all 0.3s ease; }
+        .glass-panel:hover { border-color: rgba(59, 130, 246, 0.3); box-shadow: 0 12px 40px rgba(59, 130, 246, 0.1); }
         .text-glow { text-shadow: 0 0 15px currentColor; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        .neon-border { position: relative; }
+        .neon-border::before { content: ''; position: absolute; inset: -1px; background: linear-gradient(45deg, #3b82f6, #8b5cf6, #00c2a8); z-index: -1; filter: blur(10px); opacity: 0; transition: opacity 0.3s ease; border-radius: inherit; }
+        .neon-border:hover::before { opacity: 0.5; }
     </style>
 
     <script type="importmap">
@@ -73,18 +71,20 @@
     <div id="root"></div>
 
     <script type="text/babel" data-type="module">
-        import React, { useState, useEffect, useRef } from 'react';
+        import React, { useState, useEffect, useRef, createContext, useContext } from 'react';
         import { createRoot } from 'react-dom/client';
-        import { motion, AnimatePresence } from 'framer-motion';
+        import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
         import * as THREE from 'three';
-        import { Shield, Upload, FileSearch, AlertTriangle, X, CheckCircle, Activity, History, Zap, Database, Globe, Lock } from 'lucide-react';
+        import { Shield, Upload, FileSearch, AlertTriangle, X, CheckCircle, Activity, History, Zap, Database, Globe, Lock, User, Settings, CreditCard, Terminal, LayoutDashboard, LogOut, ChevronRight, Play, Pause, Volume2, Image as ImageIcon, FileText, Link as LinkIcon } from 'lucide-react';
 
-        // --- CONFIGURATION ---
+        // ==========================================
+        // CONFIGURATION (REPLACE WITH YOUR KEYS)
+        // ==========================================
         const CONFIG = {
+            GOOGLE_CLIENT_ID: "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com", // Get from Google Cloud Console
             CLOUDINARY_URL: "https://api.cloudinary.com/v1_1/dphicbaf2/auto/upload",
             UPLOAD_PRESET: "yhqlojie",
-            ORCHESTRATOR_URL: "https://mediaproofai.mediaproofai.workers.dev",
-            ADMIN_EMAIL: "mediaproofai@gmail.com",
+            ORCHESTRATOR_URL: "https://mediaproof-orchestrator.YOUR_SUBDOMAIN.workers.dev", // Your Cloudflare Worker URL
             PAYPAL: {
                 BASIC: "https://www.paypal.com/ncp/payment/JY5W5KLERV59A",
                 PRO: "https://www.paypal.com/ncp/payment/YP9Y6QKQUZT3C",
@@ -92,13 +92,103 @@
             }
         };
 
+        // PLAN DEFINITIONS
         const PLANS = {
-            FREE: { name: "Starter", limit: 2, speed: 4000, features: ["image"], history: false },
-            BASIC: { name: "Essential", limit: 10, speed: 2000, features: ["image"], history: false },
-            PRO: { name: "Pro", limit: 25, speed: 1000, features: ["image", "video", "audio"], history: true },
-            BUSINESS: { name: "Unlimited", limit: 9999, speed: 500, features: ["image", "video", "audio"], history: true }
+            FREE: { name: "Starter", limit: 2, features: ["image"], advanced: false },
+            BASIC: { name: "Essential", limit: 10, features: ["image"], advanced: false },
+            PRO: { name: "Pro", limit: 25, features: ["image", "video", "audio", "pdf"], advanced: true },
+            BUSINESS: { name: "Enterprise", limit: 9999, features: ["all"], advanced: true }
         };
 
+        // ==========================================
+        // CONTEXT & STATE MANAGEMENT
+        // ==========================================
+        const AppContext = createContext();
+
+        const AppProvider = ({ children }) => {
+            const [user, setUser] = useState(null);
+            const [view, setView] = useState('landing');
+            const [history, setHistory] = useState([]);
+            const [notification, setNotification] = useState(null);
+
+            // Load state from local storage on boot
+            useEffect(() => {
+                const storedUser = localStorage.getItem('mediaproof_user');
+                if (storedUser) checkDailyReset(JSON.parse(storedUser));
+                const storedHistory = localStorage.getItem('mediaproof_history');
+                if (storedHistory) setHistory(JSON.parse(storedHistory));
+            }, []);
+
+            // Daily Credit Reset Logic
+            const checkDailyReset = (userData) => {
+                const last = new Date(userData.lastLogin).toDateString();
+                const today = new Date().toDateString();
+                let updated = { ...userData, plan: PLANS[userData.planKey || 'FREE'] };
+                if (last !== today) {
+                    updated.credits = updated.plan.limit;
+                    updated.lastLogin = new Date().toISOString();
+                    localStorage.setItem('mediaproof_user', JSON.stringify(updated));
+                }
+                setUser(updated);
+            };
+
+            // Login handler
+            const login = (email, planKey = 'FREE') => {
+                const plan = PLANS[planKey];
+                const newUser = { email, planKey, credits: plan.limit, lastLogin: new Date().toISOString() };
+                setUser({ ...newUser, plan });
+                localStorage.setItem('mediaproof_user', JSON.stringify(newUser));
+                setView('dashboard');
+                showNotification(`Welcome back, ${email.split('@')[0]}!`, 'success');
+            };
+
+            // Logout handler
+            const logout = () => {
+                setUser(null);
+                localStorage.removeItem('mediaproof_user');
+                setView('landing');
+                showNotification('Logged out successfully.', 'info');
+            };
+
+            // Credit consumption
+            const useCredit = () => {
+                if (!user || user.credits <= 0) return false;
+                const updated = { ...user, credits: user.credits - 1 };
+                setUser(updated);
+                localStorage.setItem('mediaproof_user', JSON.stringify(updated));
+                return true;
+            };
+
+            // Add to history
+            const addToHistory = (entry) => {
+                const newHistory = [entry, ...history].slice(0, 50);
+                setHistory(newHistory);
+                localStorage.setItem('mediaproof_history', JSON.stringify(newHistory));
+            };
+
+            // Notification helper
+            const showNotification = (msg, type = 'info') => {
+                setNotification({ msg, type, id: Date.now() });
+                setTimeout(() => setNotification(null), 3000);
+            };
+
+            return (
+                <AppContext.Provider value={{ user, login, logout, view, setView, useCredit, history, addToHistory, showNotification, PLANS }}>
+                    {children}
+                    <AnimatePresence>
+                        {notification && <Notification key={notification.id} message={notification.msg} type={notification.type} />}
+                    </AnimatePresence>
+                </AppContext.Provider>
+            );
+        };
+
+        const useApp = () => useContext(AppContext);
+
+        // ==========================================
+        // SHARED COMPONENTS
+        // ==========================================
+        
+        // 3D Hero Component
         const Hero3D = () => {
             const mountRef = useRef(null);
             useEffect(() => {
@@ -106,292 +196,845 @@
                 const scene = new THREE.Scene();
                 const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
                 const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-                renderer.setSize(400, 400);
+                renderer.setSize(500, 500);
                 mountRef.current.appendChild(renderer.domElement);
                 
-                const geometry = new THREE.IcosahedronGeometry(1.4, 0);
-                const material = new THREE.MeshNormalMaterial({ wireframe: true, transparent: true, opacity: 0.5 });
+                const geometry = new THREE.IcosahedronGeometry(1.5, 0);
+                const material = new THREE.MeshNormalMaterial({ wireframe: true, transparent: true, opacity: 0.3 });
                 const sphere = new THREE.Mesh(geometry, material);
-                scene.add(sphere);
-                camera.position.z = 3.5;
+                
+                const coreGeo = new THREE.OctahedronGeometry(0.8, 0);
+                const coreMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, wireframe: true });
+                const core = new THREE.Mesh(coreGeo, coreMat);
 
+                scene.add(sphere, core);
+                camera.position.z = 4;
+
+                let t = 0;
                 const animate = () => {
                     requestAnimationFrame(animate);
-                    sphere.rotation.x += 0.002;
-                    sphere.rotation.y += 0.003;
+                    t += 0.005;
+                    sphere.rotation.x += 0.002; sphere.rotation.y += 0.003;
+                    core.rotation.x -= 0.005; core.rotation.y -= 0.005;
+                    core.position.y = Math.sin(t) * 0.2;
                     renderer.render(scene, camera);
                 };
                 animate();
                 return () => mountRef.current && (mountRef.current.innerHTML = '');
             }, []);
-            return <div ref={mountRef} className="pointer-events-none opacity-60 mix-blend-screen" />;
+            return <div ref={mountRef} className="pointer-events-none opacity-80 mix-blend-screen absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />;
         };
 
-        const PricingModal = ({ onClose }) => (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
-                <div className="bg-[#0f0f13] border border-white/10 rounded-2xl p-6 max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-                    <div className="flex justify-between items-center mb-8">
-                        <h2 className="text-3xl font-bold text-white">Select Enterprise Tier</h2>
-                        <button onClick={onClose}><X/></button>
-                    </div>
-                    <div className="grid md:grid-cols-3 gap-6">
-                        {['Essential', 'Pro', 'Unlimited'].map((tier, i) => (
-                            <div key={tier} className="glass-panel p-6 rounded-xl hover:border-accent-blue/50 transition-colors">
-                                <h3 className="text-lg font-bold text-white">{tier}</h3>
-                                <div className="text-3xl font-bold text-accent-blue my-3">${i === 0 ? '2.99' : i === 1 ? '3.99' : '6.99'}</div>
-                                <a href={Object.values(CONFIG.PAYPAL)[i]} target="_blank" className="block text-center py-3 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold mt-4 transition-all">Select</a>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </motion.div>
-        );
+        // Notification Toast
+        const Notification = ({ message, type }) => {
+            const colors = { success: 'bg-green-500/20 border-green-500', error: 'bg-red-500/20 border-red-500', info: 'bg-blue-500/20 border-blue-500' };
+            const icons = { success: <CheckCircle size={16}/>, error: <AlertTriangle size={16}/>, info: <Activity size={16}/> };
+            return (
+                <motion.div initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-20}} className={`fixed bottom-4 right-4 p-4 rounded-lg border backdrop-blur-md flex items-center gap-3 z-[100] ${colors[type]}`}>
+                    {icons[type]} <span className="text-sm font-medium">{message}</span>
+                </motion.div>
+            );
+        };
 
-        const App = () => {
-            const [user, setUser] = useState(null);
-            const [view, setView] = useState('landing');
-            const [file, setFile] = useState(null);
-            const [report, setReport] = useState(null);
-            const [showPricing, setShowPricing] = useState(false);
-            const [scanLog, setScanLog] = useState([]);
-            const [history, setHistory] = useState([]);
-
+        // Navbar
+        const Navbar = () => {
+            const { user, setView } = useApp();
+            const [scrolled, setScrolled] = useState(false);
             useEffect(() => {
-                const u = localStorage.getItem('mediaproof_user');
-                if (u) checkDailyReset(JSON.parse(u));
-                const h = localStorage.getItem('mediaproof_history');
-                if (h) setHistory(JSON.parse(h));
+                const handleScroll = () => setScrolled(window.scrollY > 20);
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
             }, []);
 
-            const checkDailyReset = (u) => {
-                const last = new Date(u.lastLogin).toDateString();
-                const today = new Date().toDateString();
-                let updated = { ...u, plan: PLANS[u.planKey || 'FREE'] };
-                if (last !== today) {
-                    updated.credits = u.email === CONFIG.ADMIN_EMAIL ? 999999 : updated.plan.limit;
-                    updated.lastLogin = new Date().toISOString();
-                    localStorage.setItem('mediaproof_user', JSON.stringify(updated));
+            return (
+                <nav className={`fixed top-0 w-full z-40 transition-all duration-300 ${scrolled ? 'bg-black/80 backdrop-blur-md border-b border-white/10 h-16' : 'h-20'}`}>
+                    <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
+                        <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setView(user ? 'dashboard' : 'landing')}>
+                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-blue to-accent-purple flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform">
+                                <Shield className="text-white" size={20}/> 
+                            </div>
+                            <div>
+                                <h1 className="font-bold text-xl leading-none tracking-tight">MediaProof</h1>
+                                <span className="text-[10px] text-accent-blue font-mono uppercase tracking-widest">Enterprise</span>
+                            </div>
+                        </div>
+                        <div className="flex gap-6 items-center text-sm font-bold">
+                            {!user && (
+                                <>
+                                    <button onClick={() => setView('pricing')} className="hover:text-accent-blue transition-colors">Pricing</button>
+                                    <button onClick={() => setView('auth')} className="px-6 py-2 bg-accent-blue hover:bg-blue-600 rounded-lg text-white transition-all shadow-lg shadow-blue-500/30">Sign In</button>
+                                </>
+                            )}
+                            {user && (
+                                <>
+                                    <div className="hidden md:flex items-center gap-4 font-mono text-xs">
+                                        <span className="text-accent-teal px-2 py-1 bg-accent-teal/10 rounded uppercase">{user.plan.name}</span>
+                                        <span className="flex items-center gap-1"><Zap size={14} className="text-accent-warning"/> {user.credits} CR</span>
+                                    </div>
+                                    <button onClick={() => setView('dashboard')} className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors border border-white/10">
+                                        <User size={20}/>
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </nav>
+            );
+        };
+
+        // Sidebar (for Dashboard/App pages)
+        const Sidebar = () => {
+            const { view, setView, logout, user } = useApp();
+            const menu = [
+                { id: 'dashboard', icon: LayoutDashboard, label: 'Overview' },
+                { id: 'upload', icon: Upload, label: 'New Scan' },
+                { id: 'history', icon: History, label: 'History' },
+                { id: 'api', icon: Terminal, label: 'API Playground', advanced: true },
+                { id: 'settings', icon: Settings, label: 'Settings' },
+            ];
+
+            return (
+                <div className="w-64 h-screen fixed left-0 top-0 pt-20 bg-bg-panel border-r border-white/5 hidden md:flex flex-col">
+                    <div className="flex-1 py-6 space-y-2 px-4">
+                        {menu.map(item => {
+                            const locked = item.advanced && !user?.plan?.advanced;
+                            return (
+                                <button key={item.id} onClick={() => !locked && setView(item.id)} 
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${view === item.id ? 'bg-accent-blue/10 text-accent-blue border border-accent-blue/30' : 'hover:bg-white/5 text-slate-400 hover:text-white'} ${locked ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                    <item.icon size={18} />
+                                    <span className="font-medium flex-1 text-left">{item.label}</span>
+                                    {locked && <Lock size={14} className="text-accent-warning"/>}
+                                </button>
+                            );
+                        })}
+                    </div>
+                    <div className="p-4 border-t border-white/5">
+                        <button onClick={logout} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent-danger/10 text-slate-400 hover:text-accent-danger transition-all">
+                            <LogOut size={18} /> <span className="font-medium">Sign Out</span>
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        // ==========================================
+        // PAGE COMPONENTS
+        // ==========================================
+
+        // 1. LANDING PAGE
+        const LandingPage = () => {
+            const { setView } = useApp();
+            return (
+                <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="min-h-screen pt-20">
+                    {/* Hero Section */}
+                    <section className="relative h-[90vh] flex items-center justify-center overflow-hidden">
+                        <Hero3D />
+                        <div className="text-center z-10 max-w-4xl px-4">
+                            <motion.div initial={{y:50, opacity:0}} animate={{y:0, opacity:1}} transition={{duration:0.8}} className="inline-block mb-6 px-4 py-1 rounded-full bg-white/5 border border-white/10 text-sm font-mono text-accent-blue">
+                                THE TRUTH LAYER OF THE INTERNET
+                            </motion.div>
+                            <motion.h1 initial={{y:50, opacity:0}} animate={{y:0, opacity:1}} transition={{duration:0.8, delay:0.2}} className="text-6xl md:text-8xl font-extrabold tracking-tighter mb-8 bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-slate-500 leading-none">
+                                Verify Truth.<br/>Instantly.
+                            </motion.h1>
+                            <motion.p initial={{y:50, opacity:0}} animate={{y:0, opacity:1}} transition={{duration:0.8, delay:0.4}} className="text-xl text-slate-400 mb-12 max-w-2xl mx-auto leading-relaxed">
+                                Enterprise-grade forensic intelligence for images, videos, and audio. Detect deepfakes, analyze metadata, and trace content origin with military precision.
+                            </motion.p>
+                            <motion.div initial={{y:50, opacity:0}} animate={{y:0, opacity:1}} transition={{duration:0.8, delay:0.6}} className="flex gap-4 justify-center">
+                                <button onClick={() => setView('auth')} className="px-8 py-4 bg-accent-blue hover:bg-blue-600 rounded-xl text-white font-bold text-lg transition-all shadow-lg shadow-blue-500/30 flex items-center gap-2 neon-border">
+                                    Start Free Trial <ChevronRight size={20}/>
+                                </button>
+                                <button onClick={() => window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank')} className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white font-bold text-lg transition-all flex items-center gap-2">
+                                    Watch Demo <Play size={18}/>
+                                </button>
+                            </motion.div>
+                        </div>
+                    </section>
+
+                    {/* Features Grid */}
+                    <section className="py-32 container mx-auto px-4 relative z-10">
+                        <div className="text-center mb-20">
+                            <h2 className="text-4xl font-bold mb-4">Multi-Vector Forensics</h2>
+                            <p className="text-slate-400 max-w-xl mx-auto">Our proprietary engine combines 50+ detection models into a single, unified truth score.</p>
+                        </div>
+                        <div className="grid md:grid-cols-3 gap-8">
+                            {[
+                                { icon: ImageIcon, title: "Image Analysis", desc: "Detects diffusion artifacts, GAN fingerprints, and metadata tampering." },
+                                { icon: Play, title: "Video Forensics", desc: "Frame-by-frame deepfake scanning with temporal consistency checks." },
+                                { icon: Volume2, title: "Audio Integrity", desc: "Voice cloning detection via spectral analysis and biological signal mapping." }
+                            ].map((f, i) => (
+                                <motion.div key={i} initial={{y:50, opacity:0}} whileInView={{y:0, opacity:1}} viewport={{once:true}} transition={{delay:i*0.2}} className="glass-panel p-8 rounded-3xl group hover:-translate-y-2 transition-transform">
+                                    <div className="w-16 h-16 rounded-2xl bg-accent-blue/10 flex items-center justify-center text-accent-blue mb-6 group-hover:scale-110 transition-transform">
+                                        <f.icon size={32} />
+                                    </div>
+                                    <h3 className="text-2xl font-bold mb-3">{f.title}</h3>
+                                    <p className="text-slate-400 leading-relaxed">{f.desc}</p>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </section>
+                </motion.div>
+            );
+        };
+
+        // 2. AUTH PAGE (Sign In)
+        const AuthPage = () => {
+            const { login, showNotification } = useApp();
+            const googleButtonRef = useRef(null);
+
+            useEffect(() => {
+                // Initialize Google Sign-In
+                if (window.google && googleButtonRef.current) {
+                    window.google.accounts.id.initialize({
+                        client_id: CONFIG.GOOGLE_CLIENT_ID,
+                        callback: handleGoogleResponse
+                    });
+                    window.google.accounts.id.renderButton(
+                        googleButtonRef.current,
+                        { theme: "filled_black", size: "large", width: "100%", text: "continue_with" }
+                    );
                 }
-                setUser(updated);
+            }, []);
+
+            const handleGoogleResponse = (response) => {
+                // In a real app, send response.credential to your backend to verify.
+                // For this demo, we'll decode the JWT to get the email.
+                try {
+                    const base64Url = response.credential.split('.')[1];
+                    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                    const payload = JSON.parse(window.atob(base64));
+                    login(payload.email, 'FREE');
+                } catch (e) {
+                    showNotification("Google Sign-In failed.", "error");
+                }
             };
 
-            const login = () => {
-                const email = prompt("Enter email:");
-                if (!email) return;
-                const isAdmin = email.toLowerCase() === CONFIG.ADMIN_EMAIL;
-                const key = isAdmin ? 'BUSINESS' : 'FREE'; 
-                const newUser = { email, planKey: key, credits: isAdmin ? 999999 : PLANS[key].limit, lastLogin: new Date().toISOString() };
-                setUser({ ...newUser, plan: PLANS[key] });
-                localStorage.setItem('mediaproof_user', JSON.stringify(newUser));
+            const handleDemoLogin = (plan) => {
+                const email = `demo.${plan.toLowerCase()}@example.com`;
+                login(email, plan);
             };
 
-            const upload = async (e) => {
-                if (!user) return login();
-                if (user.credits <= 0) {
-                    if (user.planKey === 'FREE') {
-                        if(confirm("Watch Ad for +1 Credit?")) {
-                            alert("Ad Playing...");
-                            setTimeout(() => {
-                                const upd = { ...user, credits: user.credits + 1 };
-                                setUser(upd);
-                                localStorage.setItem('mediaproof_user', JSON.stringify(upd));
-                            }, 2000);
-                        }
-                    } else setShowPricing(true);
+            return (
+                <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="min-h-screen pt-20 flex items-center justify-center relative overflow-hidden">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-accent-blue/20 rounded-full blur-[150px] opacity-30 pointer-events-none" />
+                    
+                    <div className="glass-panel p-10 rounded-3xl w-full max-w-md relative z-10">
+                        <div className="text-center mb-10">
+                            <Shield size={48} className="text-accent-blue mx-auto mb-4" />
+                            <h2 className="text-3xl font-bold mb-2">Welcome Back</h2>
+                            <p className="text-slate-400">Sign in to access the forensic console.</p>
+                        </div>
+
+                        <div className="space-y-4 mb-8">
+                            <div ref={googleButtonRef} className="w-full h-12"></div>
+                            <div className="relative flex items-center py-2">
+                                <div className="flex-grow border-t border-white/10"></div>
+                                <span className="flex-shrink mx-4 text-slate-500 text-xs uppercase">or use demo account</span>
+                                <div className="flex-grow border-t border-white/10"></div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button onClick={() => handleDemoLogin('FREE')} className="p-3 rounded-lg border border-white/10 hover:bg-white/5 text-sm font-medium transition-colors">Free Demo</button>
+                                <button onClick={() => handleDemoLogin('PRO')} className="p-3 rounded-lg border border-accent-blue/30 bg-accent-blue/10 text-accent-blue text-sm font-medium transition-colors">Pro Demo</button>
+                            </div>
+                        </div>
+                        
+                        <p className="text-center text-xs text-slate-500">By continuing, you agree to our Terms of Service and Privacy Policy.</p>
+                    </div>
+                </motion.div>
+            );
+        };
+
+        // 3. DASHBOARD (Overview)
+        const Dashboard = () => {
+            const { user, setView, history } = useApp();
+            const stats = [
+                { label: 'Scans This Month', value: history.length, icon: Activity, color: 'text-accent-blue' },
+                { label: 'Credits Remaining', value: user.credits, icon: Zap, color: 'text-accent-warning' },
+                { label: 'Avg Trust Score', value: history.length ? Math.round(history.reduce((a,b) => a + (100-b.score), 0) / history.length) + '%' : 'N/A', icon: Shield, color: 'text-accent-teal' },
+            ];
+
+            return (
+                <div className="p-8">
+                    <header className="mb-10 flex justify-between items-end">
+                        <div>
+                            <h2 className="text-3xl font-bold mb-2">Command Center</h2>
+                            <p className="text-slate-400">Welcome back, {user.email}. System is ready.</p>
+                        </div>
+                        <button onClick={() => setView('upload')} className="px-6 py-3 bg-accent-blue hover:bg-blue-600 rounded-xl text-white font-bold flex items-center gap-2 transition-all shadow-lg shadow-blue-500/20 neon-border">
+                            <Upload size={20}/> New Investigation
+                        </button>
+                    </header>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                        {stats.map((s, i) => (
+                            <motion.div key={i} initial={{y:20, opacity:0}} animate={{y:0, opacity:1}} transition={{delay:i*0.1}} className="glass-panel p-6 rounded-2xl flex items-center gap-4">
+                                <div className={`p-4 rounded-xl bg-white/5 ${s.color}`}>
+                                    <s.icon size={24} />
+                                </div>
+                                <div>
+                                    <div className="text-2xl font-bold">{s.value}</div>
+                                    <div className="text-sm text-slate-400">{s.label}</div>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+
+                    {/* Recent Activity */}
+                    <div className="glass-panel p-8 rounded-3xl">
+                        <h3 className="text-xl font-bold mb-6 flex items-center gap-2"><History size={20}/> Recent Scans</h3>
+                        {history.length === 0 ? (
+                            <div className="text-center py-12 text-slate-500">No recent investigations found.</div>
+                        ) : (
+                            <div className="space-y-4">
+                                {history.slice(0, 5).map(h => (
+                                    <div key={h.id} className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5 hover:border-white/20 transition-colors cursor-pointer">
+                                        <div className="flex items-center gap-4">
+                                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${h.type === 'image' ? 'bg-blue-500/20 text-blue-400' : h.type === 'video' ? 'bg-purple-500/20 text-purple-400' : 'bg-orange-500/20 text-orange-400'}`}>
+                                                {h.type === 'image' ? <ImageIcon size={20}/> : h.type === 'video' ? <Play size={20}/> : <Volume2 size={20}/>}
+                                            </div>
+                                            <div>
+                                                <div className="font-medium truncate max-w-[200px]">{h.name}</div>
+                                                <div className="text-xs text-slate-400 font-mono">{new Date(h.timestamp).toLocaleDateString()}</div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <div className={`px-3 py-1 rounded-full text-xs font-bold ${h.score > 50 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
+                                                {h.score > 50 ? 'CRITICAL' : 'VERIFIED'} ({100-h.score}%)
+                                            </div>
+                                            <ChevronRight size={16} className="text-slate-500"/>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // 4. UPLOAD & SCAN WORKFLOW
+        const UploadPage = ({ onScanComplete }) => {
+            const { user, useCredit, showNotification } = useApp();
+            const [file, setFile] = useState(null);
+            const [isScanning, setIsScanning] = useState(false);
+            const [scanStep, setScanStep] = useState(0);
+
+            const scanSteps = [
+                "Initializing secure environment...",
+                "Uploading to encrypted cloud...",
+                "Running multi-vector AI analysis...",
+                "Performing metadata extraction...",
+                "Conducting OSINT reverse search...",
+                "Finalizing authenticity score..."
+            ];
+
+            const handleDrop = (e) => {
+                e.preventDefault();
+                const droppedFile = e.dataTransfer.files[0];
+                validateAndSetFile(droppedFile);
+            };
+
+            const handleFileSelect = (e) => {
+                const selectedFile = e.target.files[0];
+                validateAndSetFile(selectedFile);
+            };
+
+            const validateAndSetFile = (f) => {
+                if (!f) return;
+                const type = f.type.split('/')[0];
+                if (!user.plan.features.includes(type) && !user.plan.features.includes('all')) {
+                    showNotification(`Upgrade to ${user.plan.name === 'Starter' ? 'Pro' : 'Business'} to scan ${type} files.`, 'error');
+                    return;
+                }
+                setFile(f);
+            };
+
+            const startScan = async () => {
+                if (!file) return;
+                if (!useCredit()) {
+                    showNotification("Insufficient credits. Please upgrade.", 'error');
                     return;
                 }
 
-                const f = e.target.files?.[0];
-                if (!f) return;
-                setFile(f);
-                setView('scanning');
-                setScanLog(["Initializing...", "Uploading..."]);
+                setIsScanning(true);
+                // Simulate scan steps for UI effect
+                for (let i = 0; i < scanSteps.length; i++) {
+                    setScanStep(i);
+                    await new Promise(r => setTimeout(r, 800 + Math.random() * 500));
+                }
 
                 try {
+                    // 1. Cloudinary Upload
                     const fd = new FormData();
-                    fd.append('file', f);
+                    fd.append('file', file);
                     fd.append('upload_preset', CONFIG.UPLOAD_PRESET);
-                    
-                    const res1 = await fetch(CONFIG.CLOUDINARY_URL, { method: 'POST', body: fd });
-                    const data1 = await res1.json();
-                    if (!data1.secure_url) throw new Error("Upload Failed");
+                    const cloudRes = await fetch(CONFIG.CLOUDINARY_URL, { method: 'POST', body: fd });
+                    const cloudData = await cloudRes.json();
+                    if (!cloudData.secure_url) throw new Error("Upload failed");
 
-                    setScanLog(prev => [...prev, "Analyzing artifacts..."]);
-
-                    const res2 = await fetch(CONFIG.ORCHESTRATOR_URL, {
+                    // 2. Orchestrator Call (The God-Mode Backend)
+                    const type = file.type.split('/')[0];
+                    const orchRes = await fetch(CONFIG.ORCHESTRATOR_URL, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ mediaUrl: data1.secure_url, type: f.type.startsWith('image') ? 'image' : 'video' })
+                        body: JSON.stringify({ mediaUrl: cloudData.secure_url, type })
                     });
-                    const data2 = await res2.json();
-                    setReport(data2);
+                    const report = await orchRes.json();
 
-                    setTimeout(() => {
-                        if (user.email !== CONFIG.ADMIN_EMAIL) {
-                            const upd = { ...user, credits: user.credits - 1 };
-                            setUser(upd);
-                            localStorage.setItem('mediaproof_user', JSON.stringify(upd));
-                        }
-                        if (user.plan.history) {
-                            const h = [{id: Date.now(), name: f.name, score: data2.risk?.globalScore || 0}, ...history];
-                            setHistory(h);
-                            localStorage.setItem('mediaproof_history', JSON.stringify(h));
-                        }
-                        setView('results');
-                    }, user.plan.speed);
-
-                } catch (err) {
-                    console.error(err);
-                    alert("Error: " + err.message);
-                    setView('landing');
+                    onScanComplete(report, file);
+                } catch (error) {
+                    showNotification("Scan failed: " + error.message, 'error');
+                    setIsScanning(false);
+                    setScanStep(0);
                 }
             };
 
             return (
-                <div className="min-h-screen pt-20 relative font-sans text-slate-200">
-                    <div className="cinematic-grain"></div>
-                    <div className="aurora-bg"></div>
+                <div className="h-full flex flex-col items-center justify-center p-8">
+                    <AnimatePresence mode="wait">
+                        {!isScanning ? (
+                            <motion.div initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-20}} className="w-full max-w-2xl">
+                                <div className="text-center mb-8">
+                                    <h2 className="text-3xl font-bold mb-2">Initiate New Scan</h2>
+                                    <p className="text-slate-400">Select media for comprehensive forensic analysis.</p>
+                                </div>
+                                
+                                <label 
+                                    onDragOver={e => e.preventDefault()} 
+                                    onDrop={handleDrop}
+                                    className={`glass-panel relative h-80 rounded-3xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer overflow-hidden group ${file ? 'border-accent-blue' : 'border-white/20 hover:border-accent-blue/50'}`}
+                                >
+                                    {file ? (
+                                        <div className="text-center z-10">
+                                            {file.type.startsWith('image') ? <ImageIcon size={48} className="text-accent-blue mx-auto mb-4"/> : file.type.startsWith('video') ? <Play size={48} className="text-accent-purple mx-auto mb-4"/> : <FileText size={48} className="text-accent-teal mx-auto mb-4"/>}
+                                            <div className="font-bold text-xl mb-1">{file.name}</div>
+                                            <div className="text-sm text-slate-400 font-mono">{file.type} • {(file.size/1024/1024).toFixed(2)} MB</div>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center z-10 space-y-4">
+                                            <div className="w-20 h-20 mx-auto bg-white/5 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                <Upload size={32} className="text-slate-400 group-hover:text-accent-blue transition-colors" />
+                                            </div>
+                                            <div>
+                                                <span className="text-lg font-medium text-white">Drag & drop media here</span>
+                                                <span className="text-slate-500 block mt-1">or click to browse</span>
+                                            </div>
+                                            <div className="flex gap-2 justify-center mt-4">
+                                                {['JPG', 'PNG', 'MP4', 'MOV', 'MP3', 'PDF'].map(ext => (
+                                                    <span key={ext} className="px-2 py-1 bg-white/5 rounded text-[10px] font-mono text-slate-500">{ext}</span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                    <input type="file" className="hidden" onChange={handleFileSelect} accept="image/*,video/*,audio/*,application/pdf" />
+                                    
+                                    {/* Holographic Effect */}
+                                    <div className="absolute inset-0 bg-gradient-to-tr from-accent-blue/10 via-transparent to-accent-purple/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                                </label>
 
-                    {/* NAVBAR */}
-                    <nav className="fixed top-0 w-full z-40 bg-black/80 backdrop-blur-md h-20 border-b border-white/10 flex items-center">
-                        <div className="max-w-7xl mx-auto px-6 w-full flex items-center justify-between">
-                            <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('landing')}>
-                                <Shield className="text-accent-blue" size={24}/> 
-                                <span className="font-bold text-xl">MediaProof</span>
+                                <div className="mt-8 flex justify-center">
+                                    <button onClick={startScan} disabled={!file} className="px-8 py-4 bg-accent-blue hover:bg-blue-600 disabled:bg-slate-700 disabled:cursor-not-allowed rounded-xl text-white font-bold text-lg transition-all shadow-lg shadow-blue-500/20 flex items-center gap-2 w-full max-w-md justify-center neon-border">
+                                        <Zap size={20} className={file ? 'text-accent-warning' : 'text-slate-400'}/>
+                                        Begin Forensic Analysis ({user.credits} CR)
+                                    </button>
+                                </div>
+                            </motion.div>
+                        ) : (
+                            <motion.div initial={{opacity:0, scale:0.9}} animate={{opacity:1, scale:1}} exit={{opacity:0, scale:1.1}} className="w-full max-w-md text-center relative">
+                                {/* Scanning Animation */}
+                                <div className="w-40 h-40 mx-auto mb-10 relative flex items-center justify-center">
+                                    <div className="absolute inset-0 rounded-full border-4 border-accent-blue/30 border-t-accent-blue animate-spin" />
+                                    <div className="absolute inset-4 rounded-full border-4 border-accent-purple/30 border-b-accent-purple animate-spin" style={{animationDirection:'reverse', animationDuration:'3s'}} />
+                                    <Shield size={48} className="text-white animate-pulse" />
+                                </div>
+                                
+                                <h2 className="text-2xl font-bold mb-6 tracking-widest animate-pulse">ANALYSIS IN PROGRESS</h2>
+                                
+                                {/* Steps List */}
+                                <div className="glass-panel p-6 rounded-xl text-left space-y-3">
+                                    {scanSteps.map((step, i) => (
+                                        <motion.div key={i} animate={{opacity: i <= scanStep ? 1 : 0.3, x: i === scanStep ? 0 : i < scanStep ? 10 : -10}} className="flex items-center gap-3 font-mono text-sm">
+                                            {i < scanStep ? <CheckCircle size={16} className="text-accent-teal"/> : i === scanStep ? <Activity size={16} className="text-accent-blue animate-spin"/> : <div className="w-4 h-4 rounded-full border-2 border-slate-700"/>}
+                                            <span className={i === scanStep ? 'text-accent-blue' : i < scanStep ? 'text-accent-teal' : 'text-slate-500'}>{step}</span>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            );
+        };
+
+        // 5. RESULTS PAGE (The Corrected Version)
+        const ResultsPage = ({ report, file }) => {
+            const { setView } = useApp();
+            
+            // Calculate Trust Score correctly from Risk Score
+            // report.risk.riskScore is 0-100 (Higher is worse)
+            const trustScore = 100 - (report?.risk?.riskScore || 0);
+            const isCritical = trustScore < 50;
+            const scoreColor = isCritical ? 'text-accent-danger' : trustScore < 80 ? 'text-accent-warning' : 'text-accent-teal';
+            const bgColor = isCritical ? 'bg-accent-danger/20' : trustScore < 80 ? 'bg-accent-warning/20' : 'bg-accent-teal/20';
+
+            // Determine media type for specific panel display
+            const mediaType = file?.type.split('/')[0] || 'unknown';
+
+            return (
+                <div className="p-8 h-full overflow-y-auto no-scrollbar">
+                    <header className="mb-8 flex justify-between items-center">
+                        <button onClick={() => setView('dashboard')} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
+                            <ChevronRight size={20} className="rotate-180"/> Back to Dashboard
+                        </button>
+                        <div className="font-mono text-xs text-slate-500">ID: {report.id}</div>
+                    </header>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        
+                        {/* MAIN SCORE CARD */}
+                        <motion.div initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} className={`lg:col-span-8 glass-panel p-10 rounded-3xl relative overflow-hidden min-h-[400px] flex flex-col justify-between neon-border group`}>
+                            <div className={`absolute top-0 right-0 p-10 opacity-10 ${scoreColor} transition-transform group-hover:scale-110`}>
+                                <Shield size={300} />
                             </div>
-                            <div className="flex gap-4 items-center text-sm font-bold">
-                                {user ? (
+                            {/* Scan Line Animation */}
+                            <div className="absolute inset-0 w-full h-2 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-scan-line opacity-50 pointer-events-none" />
+
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <Activity size={18} className={scoreColor}/>
+                                    <span className="text-sm font-mono text-slate-400 uppercase tracking-widest">Global Authenticity Score</span>
+                                </div>
+                                <div className="flex items-baseline gap-4">
+                                    <div className={`text-9xl font-black tracking-tighter text-glow ${scoreColor}`}>
+                                        {trustScore}
+                                    </div>
+                                    <div className="text-2xl font-medium text-slate-500">/ 100</div>
+                                </div>
+                                <div className={`inline-block px-4 py-2 rounded-lg text-sm font-bold uppercase mt-4 ${bgColor} ${scoreColor}`}>
+                                    {report.risk?.riskLevel || "ANALYSIS_COMPLETE"}
+                                </div>
+                            </div>
+
+                            <div className="relative z-10 mt-8 pt-8 border-t border-white/10">
+                                <h3 className="text-sm font-bold text-slate-300 uppercase mb-3">Forensic Verdict</h3>
+                                <p className="text-xl leading-relaxed font-light text-white/90">
+                                    {report.risk?.executiveSummary || "No significant anomalies detected. Media appears consistent with organic capture."}
+                                </p>
+                            </div>
+                        </motion.div>
+
+                        {/* KEY METRICS PANEL */}
+                        <div className="lg:col-span-4 flex flex-col gap-6">
+                            {/* AI Probability */}
+                            <motion.div initial={{opacity:0, x:20}} animate={{opacity:1, x:0}} transition={{delay:0.2}} className="glass-panel p-6 rounded-2xl">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-2 text-accent-purple">
+                                        <Zap size={18}/> <span className="font-bold uppercase text-xs">AI Probability</span>
+                                    </div>
+                                    <div className="font-mono text-xs text-slate-400">ENSEMBLE MODEL</div>
+                                </div>
+                                {mediaType === 'image' && report.details?.forensic?.verdict ? (
                                     <>
-                                        {user.plan.history && <button onClick={() => setView('history')} className="hidden md:flex gap-2 text-slate-400 hover:text-white"><History size={16}/> HISTORY</button>}
-                                        <span className="text-accent-teal uppercase">{user.plan.name}</span>
-                                        <span>{user.email === CONFIG.ADMIN_EMAIL ? '∞' : user.credits} CR</span>
-                                        <button onClick={() => setShowPricing(true)} className="px-4 py-2 bg-white/10 rounded border border-white/10 hover:bg-white/20">UPGRADE</button>
+                                        <div className="h-4 w-full bg-slate-800 rounded-full overflow-hidden mb-3 relative">
+                                            <motion.div initial={{width:0}} animate={{width: `${report.details.forensic.verdict.aiProbability * 100}%`}} className={`h-full absolute left-0 top-0 ${report.details.forensic.verdict.aiProbability > 0.5 ? 'bg-accent-danger' : 'bg-accent-teal'}`} />
+                                        </div>
+                                        <div className="flex justify-between text-xs font-mono font-bold">
+                                            <span className={report.details.forensic.verdict.aiProbability < 0.5 ? 'text-accent-teal' : 'text-slate-500'}>ORGANIC</span>
+                                            <span className="text-white text-lg">{(report.details.forensic.verdict.aiProbability * 100).toFixed(1)}%</span>
+                                            <span className={report.details.forensic.verdict.aiProbability > 0.5 ? 'text-accent-danger' : 'text-slate-500'}>SYNTHETIC</span>
+                                        </div>
+                                    </>
+                                ) : mediaType === 'video' && report.details?.video?.verdict ? (
+                                     <>
+                                        <div className="h-4 w-full bg-slate-800 rounded-full overflow-hidden mb-3 relative">
+                                            <motion.div initial={{width:0}} animate={{width: `${report.details.video.verdict.confidence * 100}%`}} className={`h-full absolute left-0 top-0 ${report.details.video.verdict.confidence > 0.5 ? 'bg-accent-danger' : 'bg-accent-teal'}`} />
+                                        </div>
+                                        <div className="flex justify-between text-xs font-mono font-bold">
+                                            <span className="text-slate-500">DEEPFAKE CONFIDENCE</span>
+                                            <span className="text-white text-lg">{(report.details.video.verdict.confidence * 100).toFixed(1)}%</span>
+                                        </div>
                                     </>
                                 ) : (
-                                    <button onClick={login} className="px-6 py-2 bg-accent-blue hover:bg-blue-600 rounded text-white shadow-lg">SIGN IN</button>
+                                    <div className="text-center text-slate-500 py-4">N/A for this media type</div>
                                 )}
-                            </div>
-                        </div>
-                    </nav>
-
-                    {showPricing && <PricingModal onClose={() => setShowPricing(false)} />}
-
-                    <main className="container mx-auto px-4 py-8 flex flex-col items-center justify-center min-h-[85vh]">
-                        <AnimatePresence mode="wait">
+                            </motion.div>
                             
-                            {/* LANDING */}
-                            {view === 'landing' && (
-                                <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="text-center w-full max-w-4xl relative z-10">
-                                    <div className="flex justify-center mb-8"><Hero3D /></div>
-                                    <h1 className="text-6xl md:text-8xl font-bold tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-b from-white via-slate-200 to-slate-500">
-                                        Verify Reality.
-                                    </h1>
-                                    <label className="relative flex flex-col items-center justify-center h-64 bg-[#0f0f13]/90 rounded-2xl border border-white/10 cursor-pointer overflow-hidden backdrop-blur-xl hover:border-accent-blue/50 transition-colors max-w-xl mx-auto">
-                                        <Upload className="w-12 h-12 text-slate-500 mb-4 group-hover:text-accent-blue transition-colors" />
-                                        <span className="text-lg font-medium text-slate-300">Drop media to initiate scan</span>
-                                        <input type="file" className="hidden" onChange={upload} />
-                                    </label>
-                                </motion.div>
-                            )}
-
-                            {/* SCANNING */}
-                            {view === 'scanning' && (
-                                <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="w-full max-w-lg text-center">
-                                    <Activity className="w-16 h-16 text-accent-blue mx-auto mb-8 animate-pulse" />
-                                    <h2 className="text-2xl font-mono text-accent-blue mb-6 tracking-widest">PROCESSING...</h2>
-                                    <div className="bg-black/40 p-6 rounded-xl text-left font-mono text-xs text-green-400 h-64 overflow-y-auto border border-white/10 shadow-2xl">
-                                        {scanLog.map((l, i) => <div key={i} className="mb-2">{'>'} {l}</div>)}
+                            {/* File Metadata Info */}
+                            <motion.div initial={{opacity:0, x:20}} animate={{opacity:1, x:0}} transition={{delay:0.3}} className="glass-panel p-6 rounded-2xl flex-1">
+                                <div className="flex items-center gap-2 mb-4 text-accent-blue">
+                                    <Database size={18}/> <span className="font-bold uppercase text-xs">File Metadata</span>
+                                </div>
+                                <div className="space-y-3 font-mono text-xs text-slate-400">
+                                    <div className="flex justify-between border-b border-white/5 pb-2">
+                                        <span>FILENAME</span>
+                                        <span className="text-white truncate max-w-[150px]">{file?.name}</span>
                                     </div>
-                                </motion.div>
-                            )}
+                                    <div className="flex justify-between border-b border-white/5 pb-2">
+                                        <span>TYPE</span>
+                                        <span className="text-white uppercase">{file?.type}</span>
+                                    </div>
+                                    <div className="flex justify-between border-b border-white/5 pb-2">
+                                        <span>SIZE</span>
+                                        <span className="text-white">{(file?.size/1024/1024).toFixed(2)} MB</span>
+                                    </div>
+                                    <div className="pt-2">
+                                        <span className="block mb-1 opacity-50">SOFTWARE SIGNATURE</span>
+                                        <span className={`${report.details?.metadata?.Software ? 'text-accent-warning' : 'text-slate-500'}`}>
+                                            {report.details?.metadata?.Software || "NONE DETECTED"}
+                                        </span>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </div>
 
-                            {/* RESULTS - FULL DASHBOARD RESTORED */}
-                            {view === 'results' && report && (
-                                <motion.div initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-12 gap-6">
-                                    
-                                    {/* Main Score Card */}
-                                    <div className="md:col-span-8 glass-panel p-10 rounded-3xl relative overflow-hidden flex flex-col justify-between min-h-[400px]">
-                                        <div className={`absolute top-0 right-0 p-10 opacity-10 ${report.risk?.globalScore > 50 ? 'text-red-500' : 'text-green-500'}`}>
-                                            <Shield size={300} />
+                        {/* DEEP FORENSIC MODULES (Bottom Row) */}
+                        <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+                            
+                            {/* OSINT / Web Footprint */}
+                            <motion.div initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} transition={{delay:0.4}} className="glass-panel p-6 rounded-2xl">
+                                <div className="flex items-center gap-2 mb-6 text-accent-teal">
+                                    <Globe size={18} />
+                                    <h3 className="font-bold uppercase text-xs tracking-wider">Web Footprint</h3>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                                        <div className="text-3xl font-bold text-white">{report.details?.internet?.footprintAnalysis?.totalMatches || 0}</div>
+                                        <div className="text-[10px] text-slate-500 uppercase mt-1 font-mono">Total Sightings</div>
+                                    </div>
+                                    <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                                        <div className={`text-lg font-bold ${report.details?.internet?.footprintAnalysis?.sources?.stockParams ? "text-accent-danger" : "text-accent-teal"}`}>
+                                            {report.details?.internet?.footprintAnalysis?.sources?.stockParams ? "DETECTED" : "CLEAN"}
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 uppercase mt-1 font-mono">Stock DB Match</div>
+                                    </div>
+                                </div>
+                            </motion.div>
+
+                            {/* Technical Analysis (Dynamic based on type) */}
+                            <motion.div initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} transition={{delay:0.5}} className="glass-panel p-6 rounded-2xl">
+                                <div className="flex items-center gap-2 mb-6 text-accent-warning">
+                                    <Activity size={18} />
+                                    <h3 className="font-bold uppercase text-xs tracking-wider">Technical Analysis</h3>
+                                </div>
+                                <div className="space-y-4 font-mono text-xs">
+                                    {mediaType === 'image' ? (
+                                        <>
+                                            <div>
+                                                <div className="text-slate-500 mb-1">NOISE ENTROPY</div>
+                                                <div className={`text-sm font-bold ${report.details?.forensic?.technical_analysis?.noise_verdict === "SUSPICIOUSLY_SMOOTH" ? "text-accent-danger" : "text-accent-teal"}`}>
+                                                    {report.details?.forensic?.technical_analysis?.noise_verdict?.replace('_', ' ') || "N/A"}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div className="text-slate-500 mb-1">EXIF INTEGRITY</div>
+                                                <div className="text-sm font-bold text-white">{report.details?.forensic?.metadata_dump?.exif_integrity || "N/A"}</div>
+                                            </div>
+                                        </>
+                                    ) : mediaType === 'video' ? (
+                                        <>
+                                            <div>
+                                                <div className="text-slate-500 mb-1">FRAME INTEGRITY</div>
+                                                <div className={`text-sm font-bold ${report.details?.video?.temporal_analysis?.frame_integrity === "CRITICAL_MANIPULATION" ? "text-accent-danger" : "text-accent-teal"}`}>
+                                                    {report.details?.video?.temporal_analysis?.frame_integrity?.replace('_', ' ') || "N/A"}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div className="text-slate-500 mb-1">SYNC ANOMALY</div>
+                                                <div className={`text-sm font-bold ${report.details?.video?.temporal_analysis?.sync_anomaly === "HIGH" ? "text-accent-warning" : "text-accent-teal"}`}>
+                                                    {report.details?.video?.temporal_analysis?.sync_anomaly || "N/A"}
+                                                </div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="text-slate-500">Detailed analysis not available for this type.</div>
+                                    )}
+                                </div>
+                            </motion.div>
+
+                            {/* Audio Forensics (if applicable) */}
+                             <motion.div initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} transition={{delay:0.6}} className={`glass-panel p-6 rounded-2xl ${mediaType !== 'audio' && mediaType !== 'video' ? 'opacity-50 grayscale' : ''}`}>
+                                <div className="flex items-center gap-2 mb-6 text-accent-purple">
+                                    <Volume2 size={18} />
+                                    <h3 className="font-bold uppercase text-xs tracking-wider">Audio Spectrum</h3>
+                                </div>
+                                {mediaType === 'audio' || mediaType === 'video' ? (
+                                     <div className="space-y-4 font-mono text-xs">
+                                        <div>
+                                            <div className="text-slate-500 mb-1">VOICE CLONING PROBABILITY</div>
+                                            <div className={`text-sm font-bold ${report.details?.audio?.voice_integrity?.cloning_probability > 0.5 ? "text-accent-danger" : "text-accent-teal"}`}>
+                                                {(report.details?.audio?.voice_integrity?.cloning_probability * 100).toFixed(0)}%
+                                            </div>
                                         </div>
                                         <div>
-                                            <div className="text-sm font-mono text-slate-500 uppercase tracking-widest mb-4">Global Trust Score</div>
-                                            <div className={`text-9xl font-black tracking-tighter text-glow ${report.risk?.globalScore > 50 ? 'text-red-500' : 'text-green-500'}`}>
-                                                {100 - (report.risk?.globalScore || 0)}
-                                            </div>
-                                            <div className="text-2xl text-slate-400 font-medium">/ 100</div>
-                                        </div>
-                                        
-                                        <div className="mt-8 pt-8 border-t border-white/10">
-                                            <h3 className="text-sm font-bold text-slate-300 uppercase mb-2">Forensic Verdict</h3>
-                                            <p className="text-lg text-slate-400 leading-relaxed">{report.risk?.executiveSummary || "No significant anomalies found."}</p>
+                                            <div className="text-slate-500 mb-1">FREQUENCY CUTOFF</div>
+                                            <div className="text-sm font-bold text-white">{report.details?.audio?.signal_analysis?.frequency_cutoff || "N/A"}</div>
                                         </div>
                                     </div>
-
-                                    {/* Side Panel: Metadata & Actions */}
-                                    <div className="md:col-span-4 flex flex-col gap-6">
-                                        
-                                        {/* Metadata Card */}
-                                        <div className="glass-panel p-6 rounded-2xl flex-1">
-                                            <div className="flex items-center gap-2 mb-6 text-accent-purple">
-                                                <FileSearch size={20} />
-                                                <h3 className="font-bold uppercase text-xs tracking-wider">File Metadata</h3>
-                                            </div>
-                                            <div className="space-y-4">
-                                                <div className="flex justify-between border-b border-white/5 pb-2">
-                                                    <span className="text-xs text-slate-500">TYPE</span>
-                                                    <span className="text-sm font-mono text-white">{file?.type || "Unknown"}</span>
-                                                </div>
-                                                <div className="flex justify-between border-b border-white/5 pb-2">
-                                                    <span className="text-xs text-slate-500">SIZE</span>
-                                                    <span className="text-sm font-mono text-white">{file?.size ? (file.size/1024/1024).toFixed(2) : "0"} MB</span>
-                                                </div>
-                                                <div className="pt-2">
-                                                    <span className="text-xs text-slate-500 block mb-1">SOFTWARE SIGNATURE</span>
-                                                    <span className="text-sm font-mono text-accent-teal">{report.details?.metadata?.deviceFingerprint?.software || "CLEAN / UNKNOWN"}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* OSINT Card */}
-                                        <div className="glass-panel p-6 rounded-2xl">
-                                            <div className="flex items-center gap-2 mb-4 text-accent-teal">
-                                                <Globe size={20} />
-                                                <h3 className="font-bold uppercase text-xs tracking-wider">Web Footprint</h3>
-                                            </div>
-                                            <div className="flex items-baseline gap-2">
-                                                <div className="text-4xl font-bold text-white">{report.details?.internet?.footprintAnalysis?.totalMatches || 0}</div>
-                                                <div className="text-xs text-slate-400">matches found</div>
-                                            </div>
-                                        </div>
-
-                                        <button onClick={() => setView('landing')} className="w-full py-5 rounded-xl bg-white text-black font-bold hover:bg-slate-200 transition-colors text-lg shadow-xl shadow-white/10">
-                                            Start New Investigation
-                                        </button>
+                                ) : (
+                                    <div className="h-full flex items-center justify-center text-slate-500 text-sm italic">
+                                        No audio track detected.
                                     </div>
-                                </motion.div>
-                            )}
+                                )}
+                            </motion.div>
 
-                            {/* HISTORY */}
-                            {view === 'history' && (
-                                <motion.div initial={{opacity:0}} animate={{opacity:1}} className="w-full max-w-4xl glass-panel p-10 rounded-3xl">
-                                    <div className="flex justify-between mb-6"><h2 className="text-3xl font-bold">History</h2><button onClick={()=>setView('landing')}><X/></button></div>
-                                    {history.map(h => (
-                                        <div key={h.id} className="p-4 border-b border-white/10 flex justify-between">
-                                            <span>{h.name}</span><span className="font-mono">{100-h.score}/100</span>
-                                        </div>
-                                    ))}
-                                </motion.div>
-                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
 
+        // 6. HISTORY PAGE
+        const HistoryPage = () => {
+            const { history } = useApp();
+            return (
+                <div className="p-8">
+                    <header className="mb-8">
+                        <h2 className="text-3xl font-bold mb-2">Investigation Logs</h2>
+                        <p className="text-slate-400">Audit trail of all past forensic analyses.</p>
+                    </header>
+                    <div className="glass-panel rounded-2xl overflow-hidden">
+                        <table className="w-full text-left text-sm">
+                            <thead className="text-xs uppercase bg-white/5 text-slate-400 font-mono">
+                                <tr>
+                                    <th className="p-4">Timestamp</th>
+                                    <th className="p-4">Filename</th>
+                                    <th className="p-4">Type</th>
+                                    <th className="p-4">Verdict</th>
+                                    <th className="p-4 text-right">Score</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                                {history.map(h => (
+                                    <tr key={h.id} className="hover:bg-white/5 transition-colors">
+                                        <td className="p-4 font-mono text-slate-400">{new Date(h.timestamp).toLocaleString()}</td>
+                                        <td className="p-4 font-medium text-white truncate max-w-[200px]">{h.name}</td>
+                                        <td className="p-4 uppercase text-xs font-bold">{h.type}</td>
+                                        <td className="p-4">
+                                            <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${h.score > 50 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
+                                                {h.score > 80 ? 'CRITICAL' : h.score > 50 ? 'SUSPICIOUS' : 'VERIFIED'}
+                                            </span>
+                                        </td>
+                                        <td className={`p-4 text-right font-bold ${h.score > 50 ? 'text-red-400' : 'text-green-400'}`}>{100-h.score}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+        };
+
+        // 7. PRICING PAGE
+        const PricingPage = () => {
+            const { setView, PLANS } = useApp();
+            const plansList = [PLANS.BASIC, PLANS.PRO, PLANS.BUSINESS];
+            const links = [CONFIG.PAYPAL.BASIC, CONFIG.PAYPAL.PRO, CONFIG.PAYPAL.BUSINESS];
+
+            return (
+                <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="min-h-screen pt-20 p-8 flex flex-col items-center">
+                    <div className="text-center max-w-2xl mb-16">
+                        <h2 className="text-4xl font-bold mb-4">Enterprise-Grade Pricing</h2>
+                        <p className="text-slate-400">Select a plan to unlock full forensic capabilities. Cancel anytime.</p>
+                    </div>
+                    <div className="grid md:grid-cols-3 gap-8 max-w-6xl w-full">
+                        {plansList.map((plan, i) => (
+                            <motion.div key={i} initial={{y:50, opacity:0}} animate={{y:0, opacity:1}} transition={{delay:i*0.1}} className={`glass-panel p-8 rounded-3xl relative group hover:-translate-y-2 transition-all ${i === 1 ? 'border-accent-blue shadow-lg shadow-blue-500/20 scale-105 z-10' : ''}`}>
+                                {i === 1 && <div className="absolute top-0 right-0 bg-accent-blue text-xs font-bold px-3 py-1 rounded-bl-xl rounded-tr-2xl">RECOMMENDED</div>}
+                                <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
+                                <div className="flex items-baseline gap-1 mb-6">
+                                    <span className="text-4xl font-black">${i === 0 ? '2.99' : i === 1 ? '9.99' : '29.99'}</span>
+                                    <span className="text-slate-400">/month</span>
+                                </div>
+                                <ul className="space-y-4 mb-8">
+                                    <li className="flex items-center gap-3 text-sm"><CheckCircle size={16} className="text-accent-teal"/> <strong>{plan.limit}</strong> Credits / Month</li>
+                                    <li className="flex items-center gap-3 text-sm"><CheckCircle size={16} className="text-accent-teal"/> Image Forensics</li>
+                                    <li className={`flex items-center gap-3 text-sm ${plan.advanced ? '' : 'opacity-50'}`}>
+                                        {plan.advanced ? <CheckCircle size={16} className="text-accent-teal"/> : <X size={16} className="text-slate-600"/>} Video & Audio Analysis
+                                    </li>
+                                    <li className={`flex items-center gap-3 text-sm ${plan.name === 'Enterprise' ? '' : 'opacity-50'}`}>
+                                        {plan.name === 'Enterprise' ? <CheckCircle size={16} className="text-accent-teal"/> : <X size={16} className="text-slate-600"/>} API Access
+                                    </li>
+                                </ul>
+                                <a href={links[i]} target="_blank" className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${i === 1 ? 'bg-accent-blue hover:bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'bg-white/10 hover:bg-white/20 text-white'}`}>
+                                    <CreditCard size={18}/> Subscribe Now
+                                </a>
+                            </motion.div>
+                        ))}
+                    </div>
+                </motion.div>
+            );
+        };
+
+        // 8. SETTINGS PAGE (Placeholder)
+        const SettingsPage = () => <div className="p-8 flex items-center justify-center h-full text-slate-500 font-mono">Settings module under construction.</div>;
+        
+        // 9. API PLAYGROUND (Placeholder - Gated)
+        const ApiPage = () => {
+             const { user } = useApp();
+             if (!user?.plan?.advanced) return <div className="p-8 flex flex-col items-center justify-center h-full text-center"><Lock size={48} className="text-accent-warning mb-4"/><h2 className="text-2xl font-bold mb-2">Access Restricted</h2><p className="text-slate-400">API access requires a Pro or Enterprise plan.</p></div>;
+             return <div className="p-8 flex items-center justify-center h-full text-slate-500 font-mono">API Playground module loading...</div>;
+        }
+
+        // ==========================================
+        // MAIN APP LAYOUT ROUTER
+        // ==========================================
+        const MainApp = () => {
+            const { view, user, addToHistory } = useApp();
+            const [scanResult, setScanResult] = useState(null);
+            const [scanFile, setScanFile] = useState(null);
+
+            const handleScanComplete = (report, file) => {
+                setScanResult(report);
+                setScanFile(file);
+                addToHistory({
+                    id: report.id,
+                    name: file.name,
+                    type: file.type.split('/')[0],
+                    score: report.risk.riskScore,
+                    timestamp: new Date().toISOString()
+                });
+            };
+
+            // Public Pages
+            if (view === 'landing') return <LandingPage />;
+            if (view === 'auth') return <AuthPage />;
+            if (view === 'pricing') return <PricingPage />;
+
+            // Protected App Pages
+            if (!user) return <AuthPage />; // Redirect if not logged in
+
+            return (
+                <div className="min-h-screen pt-20 md:pl-64 bg-bg-deep">
+                    <Sidebar />
+                    <main className="h-[calc(100vh-80px)] overflow-hidden relative">
+                        <AnimatePresence mode="wait">
+                            {view === 'dashboard' && <motion.div key="dash" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="h-full"><Dashboard /></motion.div>}
+                            {view === 'upload' && (
+                                scanResult ? 
+                                <motion.div key="results" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="h-full"><ResultsPage report={scanResult} file={scanFile} /></motion.div> : 
+                                <motion.div key="upload" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="h-full"><UploadPage onScanComplete={handleScanComplete} /></motion.div>
+                            )}
+                            {view === 'history' && <motion.div key="history" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="h-full h-full overflow-y-auto"><HistoryPage /></motion.div>}
+                            {view === 'settings' && <motion.div key="settings" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="h-full"><SettingsPage /></motion.div>}
+                            {view === 'api' && <motion.div key="api" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="h-full"><ApiPage /></motion.div>}
                         </AnimatePresence>
                     </main>
                 </div>
             );
         };
 
+        // ==========================================
+        // ROOT RENDER
+        // ==========================================
         const root = createRoot(document.getElementById('root'));
-        root.render(<App />);
+        root.render(
+            <AppProvider>
+                <div className="cinematic-grain"/>
+                <div className="aurora-bg"/>
+                <Navbar />
+                <MainApp />
+            </AppProvider>
+        );
     </script>
 </body>
 </html>
