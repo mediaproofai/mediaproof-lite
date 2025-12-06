@@ -1,59 +1,55 @@
 <!DOCTYPE html>
-<html lang="en" class="antialiased">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MediaProof | The Truth Layer</title>
     
-    <script>
-        window.onerror = function(msg, url, line, col, error) {
-            // Ignore benign resize observer errors
-            if (msg.includes("ResizeObserver")) return;
-            document.body.innerHTML = `
-                <div style="background:#000; color:#ff3333; font-family:monospace; padding:2rem; height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center;">
-                    <h1 style="font-size:2rem; margin-bottom:1rem;">⚠️ CRITICAL SYSTEM FAILURE</h1>
-                    <div style="background:#111; padding:1.5rem; border:1px solid #333; border-radius:8px; max-width:600px; width:100%;">
-                        <p style="color:#fff; margin-bottom:0.5rem;"><strong>ERROR:</strong> ${msg}</p>
-                        <p style="color:#666;">Line: ${line} | Col: ${col}</p>
-                    </div>
-                    <button onclick="window.location.reload()" style="margin-top:2rem; padding:10px 20px; background:#fff; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">REBOOT SYSTEM</button>
-                </div>
-            `;
-            return false;
-        };
-    </script>
-
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+                    fontFamily: { sans: ['Space Grotesk', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
                     colors: { 
-                        bg: { deep: '#020203', panel: '#0C0C12', surface: '#15151A' },
-                        accent: { blue: '#3B82F6', purple: '#8B5CF6', teal: '#00C2A8', danger: '#EF4444', warning: '#F59E0B' }
+                        bg: { deep: '#000000', panel: '#050507', surface: '#0A0A0F' },
+                        neon: { blue: '#00F0FF', purple: '#BD00FF', red: '#FF003C', green: '#00FF94' }
                     },
-                    animation: { 'aurora': 'aurora 20s ease infinite alternate', 'scan': 'scan 3s linear infinite' },
-                    keyframes: {
-                        aurora: { '0%': { opacity: 0.4, transform: 'scale(1)' }, '100%': { opacity: 0.6, transform: 'scale(1.1)' } },
-                        scan: { '0%': { transform: 'translateY(-100%)' }, '100%': { transform: 'translateY(100%)' } }
-                    }
+                    animation: { 'scan': 'scan 2s linear infinite', 'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite' },
+                    keyframes: { scan: { '0%': { transform: 'translateY(-100%)' }, '100%': { transform: 'translateY(100%)' } } }
                 }
             }
         }
     </script>
 
     <style>
-        body { background-color: #020203; color: #e2e8f0; overflow-x: hidden; }
-        .cinematic-grain { position: fixed; inset: 0; pointer-events: none; z-index: 50; opacity: 0.03; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); }
-        .aurora-bg { position: fixed; inset: -50%; z-index: -1; filter: blur(120px); opacity: 0.5; background: radial-gradient(circle at 50% 50%, rgba(59,130,246,0.1), transparent 50%), radial-gradient(circle at 80% 20%, rgba(139,92,246,0.08), transparent 40%); animation: aurora-flow 25s ease infinite alternate; }
-        .glass-panel { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.06); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); }
-        .text-glow { text-shadow: 0 0 20px currentColor; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
+        body { background-color: #000; color: #fff; overflow-x: hidden; }
+        /* HOLOGRAPHIC GRID BACKGROUND */
+        .cyber-grid {
+            position: fixed; inset: 0; z-index: -1; opacity: 0.15; pointer-events: none;
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(0, 240, 255, 0.1) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(0, 240, 255, 0.1) 1px, transparent 1px);
+            mask-image: radial-gradient(circle at 50% 50%, black 40%, transparent 80%);
+        }
+        .glass-panel {
+            background: rgba(10, 10, 15, 0.6); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+        }
+        .neon-border { box-shadow: 0 0 10px rgba(0, 240, 255, 0.1), inset 0 0 20px rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.3); }
+        .neon-text { text-shadow: 0 0 10px rgba(0, 240, 255, 0.5); }
+        .scan-line { position: absolute; top: 0; left: 0; right: 0; height: 2px; background: #00F0FF; box-shadow: 0 0 10px #00F0FF; animation: scan 2s linear infinite; opacity: 0.5; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #050507; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00F0FF; }
     </style>
 
     <script type="importmap">
@@ -64,8 +60,7 @@
             "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom",
             "three": "https://esm.sh/three@0.160.0",
             "lucide-react": "https://esm.sh/lucide-react@0.292.0?external=react,react-dom",
-            "clsx": "https://esm.sh/clsx@2.0.0",
-            "tailwind-merge": "https://esm.sh/tailwind-merge@2.1.0"
+            "exifr": "https://esm.sh/exifr@7.1.3" 
         }
     }
     </script>
@@ -78,10 +73,16 @@
         import { createRoot } from 'react-dom/client';
         import { motion, AnimatePresence } from 'framer-motion';
         import * as THREE from 'three';
-        import { Shield, Upload, FileSearch, AlertTriangle, X, CheckCircle, Activity, History, Zap, Database, Globe, Lock, Play, Pause, ChevronRight, Eye } from 'lucide-react';
+        import { Shield, Upload, FileSearch, AlertTriangle, X, CheckCircle, Activity, History, Zap, Database, Globe, Lock, Play, Pause, ChevronRight, Eye, Terminal, Fingerprint, Scan } from 'lucide-react';
+        import exifr from 'exifr';
 
-        // --- CONFIGURATION ---
+        // ==========================================
+        // CONFIGURATION
+        // ==========================================
         const CONFIG = {
+            // REPLACE THIS with your actual Google Client ID
+            GOOGLE_CLIENT_ID: "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com", 
+            
             CLOUDINARY_URL: "https://api.cloudinary.com/v1_1/dphicbaf2/auto/upload",
             UPLOAD_PRESET: "yhqlojie",
             ORCHESTRATOR_URL: "https://mediaproofai.mediaproofai.workers.dev/",
@@ -94,257 +95,310 @@
         };
 
         const PLANS = {
-            FREE: { name: "Starter", limit: 2, speed: 4000, features: ["image"], history: false },
-            BASIC: { name: "Essential", limit: 10, speed: 2000, features: ["image"], history: false },
-            PRO: { name: "Pro", limit: 25, speed: 1000, features: ["image", "video", "audio"], history: true },
-            BUSINESS: { name: "Unlimited", limit: 9999, speed: 500, features: ["image", "video", "audio"], history: true }
+            FREE: { name: "Starter", limit: 2, features: ["image"], speed: 3000 },
+            BASIC: { name: "Essential", limit: 10, features: ["image"], speed: 1500 },
+            PRO: { name: "Pro", limit: 25, features: ["all"], speed: 800 },
+            BUSINESS: { name: "Unlimited", limit: 9999, features: ["all"], speed: 200 }
         };
 
-        // --- COMPONENTS ---
-
-        const Hero3D = () => {
+        // --- 3D PARTICLE GLOBE (The "Silicon Valley" Look) ---
+        const HeroGlobe = () => {
             const mountRef = useRef(null);
             useEffect(() => {
                 if (!mountRef.current) return;
                 const scene = new THREE.Scene();
                 const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
                 const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-                renderer.setSize(400, 400);
+                renderer.setSize(600, 600);
                 mountRef.current.appendChild(renderer.domElement);
-                
-                const geometry = new THREE.IcosahedronGeometry(1.2, 0);
-                const material = new THREE.MeshNormalMaterial({ wireframe: true, transparent: true, opacity: 0.3 });
-                const sphere = new THREE.Mesh(geometry, material);
-                
-                const coreGeo = new THREE.OctahedronGeometry(0.6, 0);
-                const coreMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, wireframe: true });
-                const core = new THREE.Mesh(coreGeo, coreMat);
 
-                scene.add(sphere, core);
-                camera.position.z = 3;
+                // Particles
+                const geometry = new THREE.BufferGeometry();
+                const particles = 2000;
+                const positions = new Float32Array(particles * 3);
+                for(let i=0; i<particles*3; i++) positions[i] = (Math.random() - 0.5) * 4;
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                const material = new THREE.PointsMaterial({ color: 0x00F0FF, size: 0.02, transparent: true, opacity: 0.8 });
+                const points = new THREE.Points(geometry, material);
+                scene.add(points);
+
+                // Core
+                const coreGeo = new THREE.IcosahedronGeometry(0.8, 1);
+                const coreMat = new THREE.MeshBasicMaterial({ color: 0xBD00FF, wireframe: true, transparent: true, opacity: 0.1 });
+                const core = new THREE.Mesh(coreGeo, coreMat);
+                scene.add(core);
+
+                camera.position.z = 2.5;
 
                 const animate = () => {
                     requestAnimationFrame(animate);
-                    sphere.rotation.x += 0.002; sphere.rotation.y += 0.003;
+                    points.rotation.y += 0.002;
                     core.rotation.x -= 0.005; core.rotation.y -= 0.005;
                     renderer.render(scene, camera);
                 };
                 animate();
                 return () => mountRef.current && (mountRef.current.innerHTML = '');
             }, []);
-            return <div ref={mountRef} className="pointer-events-none opacity-60 mix-blend-screen" />;
+            return <div ref={mountRef} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-60 mix-blend-screen" />;
         };
 
-        const PricingModal = ({ onClose }) => (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
-                <div className="bg-[#0f0f13] border border-white/10 rounded-2xl p-6 max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-                    <div className="flex justify-between items-center mb-8">
-                        <h2 className="text-3xl font-bold text-white">Upgrade Plan</h2>
-                        <button onClick={onClose}><X/></button>
-                    </div>
-                    <div className="grid md:grid-cols-3 gap-6">
-                        {['Essential ($2.99)', 'Pro ($3.99)', 'Unlimited ($6.99)'].map((tier, i) => (
-                            <div key={i} className="glass-panel p-6 rounded-xl hover:border-accent-blue/50 transition-colors">
-                                <h3 className="text-lg font-bold text-white">{tier}</h3>
-                                <a href={Object.values(CONFIG.PAYPAL)[i]} target="_blank" className="block text-center py-3 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold mt-4">Select</a>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        );
+        // --- GOOGLE SIGN IN BUTTON ---
+        const GoogleBtn = ({ onLogin }) => {
+            const btnRef = useRef(null);
+            useEffect(() => {
+                if (window.google && btnRef.current) {
+                    try {
+                        window.google.accounts.id.initialize({
+                            client_id: CONFIG.GOOGLE_CLIENT_ID,
+                            callback: (res) => {
+                                const payload = JSON.parse(atob(res.credential.split('.')[1]));
+                                onLogin(payload.email, payload.name, payload.picture);
+                            }
+                        });
+                        window.google.accounts.id.renderButton(btnRef.current, { theme: "filled_black", size: "large", shape: "pill", width: "100%" });
+                    } catch (e) { console.error("Google Auth Error:", e); }
+                }
+            }, []);
+            return <div ref={btnRef} className="w-full h-[40px] mb-4"></div>;
+        };
 
-        // --- MAIN APP LOGIC ---
+        // --- MAIN APP ---
         const App = () => {
             const [user, setUser] = useState(null);
             const [view, setView] = useState('landing');
-            const [file, setFile] = useState(null);
+            const [scanStatus, setScanStatus] = useState({ state: 'idle', log: [], progress: 0 });
             const [report, setReport] = useState(null);
+            const [file, setFile] = useState(null);
+            const [debugData, setDebugData] = useState(null);
             const [showPricing, setShowPricing] = useState(false);
-            const [scanLog, setScanLog] = useState([]);
-            const [history, setHistory] = useState([]);
-            const [debugMode, setDebugMode] = useState(false);
 
             useEffect(() => {
                 const u = localStorage.getItem('mediaproof_user');
-                if (u) checkDailyReset(JSON.parse(u));
-                const h = localStorage.getItem('mediaproof_history');
-                if (h) setHistory(JSON.parse(h));
+                if (u) setUser(JSON.parse(u));
             }, []);
 
-            const checkDailyReset = (u) => {
-                const last = new Date(u.lastLogin).toDateString();
-                const today = new Date().toDateString();
-                let updated = { ...u, plan: PLANS[u.planKey || 'FREE'] };
-                if (last !== today) {
-                    updated.credits = u.email === CONFIG.ADMIN_EMAIL ? 999999 : updated.plan.limit;
-                    updated.lastLogin = new Date().toISOString();
-                    localStorage.setItem('mediaproof_user', JSON.stringify(updated));
-                }
-                setUser(updated);
+            const login = (email, name, pic) => {
+                const isAdmin = email === CONFIG.ADMIN_EMAIL;
+                const plan = isAdmin ? PLANS.BUSINESS : PLANS.FREE;
+                const userData = { email, name, pic, plan, credits: isAdmin ? 999999 : plan.limit };
+                setUser(userData);
+                localStorage.setItem('mediaproof_user', JSON.stringify(userData));
+                setView('dashboard');
             };
 
-            const login = () => {
-                const email = prompt("Enter email:");
-                if (!email) return;
-                const isAdmin = email.toLowerCase() === CONFIG.ADMIN_EMAIL;
-                const key = isAdmin ? 'BUSINESS' : 'FREE'; 
-                const newUser = { email, planKey: key, credits: isAdmin ? 999999 : PLANS[key].limit, lastLogin: new Date().toISOString() };
-                setUser({ ...newUser, plan: PLANS[key] });
-                localStorage.setItem('mediaproof_user', JSON.stringify(newUser));
-                if (isAdmin) setDebugMode(true);
-            };
-
-            const upload = async (e) => {
-                if (!user) return login();
-                if (user.credits <= 0 && user.planKey !== 'FREE') return setShowPricing(true);
-
-                const f = e.target.files?.[0];
+            const runScan = async (e) => {
+                const f = e.target.files[0];
                 if (!f) return;
                 setFile(f);
                 setView('scanning');
-                setScanLog(["Initializing secure environment...", "Allocating neural resources..."]);
-
+                
+                // 1. LOCAL INTELLIGENCE (The Failsafe)
+                // We analyze the file IN THE BROWSER before sending it.
+                // This ensures we catch AI metadata even if the backend fails.
+                let localTags = [];
                 try {
-                    // 1. Upload
+                    setScanStatus({ state: 'processing', log: ['Extracting local metadata...'], progress: 10 });
+                    const exif = await exifr.parse(f);
+                    if (exif) {
+                        const software = exif.Software || exif.CreatorTool || "";
+                        if (/Midjourney|Stable Diffusion|DALL-E|AI/i.test(software)) {
+                            localTags.push("AI Signature Found: " + software);
+                        }
+                    }
+                } catch(err) { console.warn("Local Exif fail", err); }
+
+                // 2. UPLOAD
+                try {
+                    setScanStatus(prev => ({ ...prev, log: [...prev.log, "Encrypting & Uploading to Secure Cloud..."], progress: 30 }));
                     const fd = new FormData();
                     fd.append('file', f);
                     fd.append('upload_preset', CONFIG.UPLOAD_PRESET);
-                    const res1 = await fetch(CONFIG.CLOUDINARY_URL, { method: 'POST', body: fd });
-                    const data1 = await res1.json();
-                    if (!data1.secure_url) throw new Error("Upload Failed");
+                    
+                    const upRes = await fetch(CONFIG.CLOUDINARY_URL, { method: 'POST', body: fd });
+                    const upData = await upRes.json();
+                    
+                    if (!upData.secure_url) throw new Error("Upload Failed");
 
-                    setScanLog(prev => [...prev, "Upload complete.", "Engaging multi-vector analysis..."]);
-
-                    // 2. Orchestrate
-                    const res2 = await fetch(CONFIG.ORCHESTRATOR_URL, {
+                    // 3. BACKEND ANALYSIS
+                    setScanStatus(prev => ({ ...prev, log: [...prev.log, " engaging Neural Neural Network Ensemble..."], progress: 60 }));
+                    
+                    const orchRes = await fetch(CONFIG.ORCHESTRATOR_URL, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ 
-                            mediaUrl: data1.secure_url, 
+                            mediaUrl: upData.secure_url, 
                             type: f.type.startsWith('image') ? 'image' : f.type.startsWith('audio') ? 'audio' : 'video' 
                         })
                     });
-                    
-                    const data2 = await res2.json();
-                    
-                    // --- INTELLIGENT PARSING (Fix for "100/100" issue) ---
-                    // If backend returns null risk, we default to "INCONCLUSIVE" (50) instead of "SAFE" (0)
-                    if (!data2.risk || typeof data2.risk.riskScore === 'undefined') {
-                        data2.risk = { riskScore: 50, executiveSummary: "Analysis Inconclusive. Backend data missing." };
-                    }
-                    
-                    setReport(data2);
 
-                    // 3. Finalize
-                    setTimeout(() => {
-                        if (user.email !== CONFIG.ADMIN_EMAIL) {
-                            const upd = { ...user, credits: Math.max(0, user.credits - 1) };
-                            setUser(upd);
-                            localStorage.setItem('mediaproof_user', JSON.stringify(upd));
-                        }
-                        setView('results');
-                    }, user.plan.speed);
+                    const backendData = await orchRes.json();
+                    setDebugData(backendData); // Save raw data for Admin debugging
+
+                    // 4. MERGE LOCAL & BACKEND INTELLIGENCE
+                    // If local check found AI, we force the report to reflect it even if backend failed.
+                    if (localTags.length > 0) {
+                        if (!backendData.risk) backendData.risk = { riskScore: 0 };
+                        backendData.risk.riskScore = Math.max(backendData.risk.riskScore, 100);
+                        backendData.risk.riskLevel = "CRITICAL";
+                        backendData.risk.executiveSummary = "CRITICAL: Local forensic analysis detected AI signatures in file header.";
+                        if (!backendData.risk.breakdown) backendData.risk.breakdown = [];
+                        backendData.risk.breakdown.push(...localTags);
+                    }
+
+                    // Handle "Missing Data" gracefully
+                    if (!backendData.risk) {
+                        backendData.risk = { riskScore: 50, riskLevel: "UNKNOWN", executiveSummary: "Backend analysis returned partial data. Manual review recommended." };
+                    }
+
+                    setReport(backendData);
+                    setScanStatus(prev => ({ ...prev, log: [...prev.log, "Analysis Complete."], progress: 100 }));
+                    
+                    setTimeout(() => setView('results'), 1000);
 
                 } catch (err) {
-                    console.error(err);
-                    alert("Analysis Failed: " + err.message);
-                    setView('landing');
+                    setScanStatus(prev => ({ ...prev, log: [...prev.log, `ERROR: ${err.message}`], progress: 0 }));
+                    alert("System Error: " + err.message);
+                    setView('dashboard');
                 }
             };
 
+            // RENDER PAGES
             return (
-                <div className="min-h-screen pt-20 relative font-sans text-slate-200">
-                    <div className="cinematic-grain"></div>
-                    <div className="aurora-bg"></div>
-
-                    <nav className="fixed top-0 w-full z-40 bg-black/80 backdrop-blur-md h-20 border-b border-white/10 flex items-center">
-                        <div className="max-w-7xl mx-auto px-6 w-full flex items-center justify-between">
-                            <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('landing')}>
-                                <Shield className="text-accent-blue" size={24}/> 
-                                <span className="font-bold text-xl">MediaProof</span>
-                            </div>
-                            <div className="flex gap-4 items-center text-sm font-bold">
-                                {user ? (
-                                    <>
-                                        <span className="text-accent-teal uppercase">{user.plan.name}</span>
-                                        <span>{user.email === CONFIG.ADMIN_EMAIL ? '∞' : user.credits} CR</span>
-                                        <button onClick={() => setShowPricing(true)} className="px-4 py-2 bg-white/10 rounded border border-white/10 hover:bg-white/20">UPGRADE</button>
-                                    </>
-                                ) : (
-                                    <button onClick={login} className="px-6 py-2 bg-accent-blue hover:bg-blue-600 rounded text-white shadow-lg">SIGN IN</button>
-                                )}
-                            </div>
+                <div className="min-h-screen relative font-sans text-slate-200 selection:bg-neon-blue/30">
+                    <div className="cyber-grid" />
+                    
+                    {/* NAVBAR */}
+                    <nav className="fixed top-0 w-full z-50 h-20 border-b border-white/10 bg-black/80 backdrop-blur-md flex items-center px-8 justify-between">
+                        <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('landing')}>
+                            <Shield className="text-neon-blue" size={28}/> 
+                            <span className="font-bold text-xl tracking-tight">MediaProof <span className="text-xs text-neon-purple align-top">ENT</span></span>
+                        </div>
+                        <div className="flex items-center gap-6 text-sm font-bold">
+                            {user ? (
+                                <>
+                                    <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-white/5 rounded border border-white/10">
+                                        <Zap size={14} className="text-neon-warning"/> <span>{user.credits === 999999 ? '∞' : user.credits}</span>
+                                    </div>
+                                    <button onClick={() => { setUser(null); setView('landing'); }} className="hover:text-white text-slate-400">LOGOUT</button>
+                                </>
+                            ) : (
+                                <button onClick={() => setView('auth')} className="neon-border px-6 py-2 rounded text-neon-blue hover:bg-neon-blue/10 transition-colors">LOGIN</button>
+                            )}
                         </div>
                     </nav>
 
-                    {showPricing && <PricingModal onClose={() => setShowPricing(false)} />}
+                    {/* VIEW: LANDING */}
+                    {view === 'landing' && (
+                        <div className="h-screen flex flex-col items-center justify-center text-center relative overflow-hidden">
+                            <HeroGlobe />
+                            <motion.h1 initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} className="text-7xl md:text-9xl font-black tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-600 z-10 neon-text">
+                                TRUTH.<br/>VERIFIED.
+                            </motion.h1>
+                            <p className="text-xl text-slate-400 mb-10 max-w-2xl z-10">The world's most advanced forensic engine. Detect deepfakes, analyze biometrics, and trace origins in milliseconds.</p>
+                            <button onClick={() => setView('auth')} className="z-10 px-10 py-4 bg-neon-blue text-black font-bold rounded-none hover:scale-105 transition-transform flex items-center gap-2">
+                                INITIALIZE SYSTEM <ChevronRight size={20}/>
+                            </button>
+                        </div>
+                    )}
 
-                    <main className="container mx-auto px-4 py-8 flex flex-col items-center justify-center min-h-[85vh]">
-                        <AnimatePresence mode="wait">
-                            
-                            {view === 'landing' && (
-                                <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="text-center w-full max-w-4xl relative z-10">
-                                    <div className="flex justify-center mb-8"><Hero3D /></div>
-                                    <h1 className="text-6xl md:text-8xl font-bold tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-b from-white via-slate-200 to-slate-500">Verify Truth.</h1>
-                                    <label className="relative flex flex-col items-center justify-center h-64 bg-[#0f0f13]/90 rounded-2xl border border-white/10 cursor-pointer overflow-hidden backdrop-blur-xl hover:border-accent-blue/50 transition-colors max-w-xl mx-auto">
-                                        <Upload className="w-12 h-12 text-slate-500 mb-4 group-hover:text-accent-blue transition-colors" />
-                                        <span className="text-lg font-medium text-slate-300">Drop media to initiate scan</span>
-                                        <input type="file" className="hidden" onChange={upload} />
-                                    </label>
-                                </motion.div>
-                            )}
+                    {/* VIEW: AUTH */}
+                    {view === 'auth' && (
+                        <div className="h-screen flex items-center justify-center">
+                            <div className="glass-panel p-10 max-w-md w-full rounded-none border-l-4 border-neon-blue">
+                                <h2 className="text-3xl font-bold mb-2">Identify</h2>
+                                <p className="text-slate-400 mb-8">Secure access required.</p>
+                                <GoogleBtn onLogin={login} />
+                                <div className="text-center text-xs text-slate-600 mt-6 font-mono">ENCRYPTED CONNECTION ESTABLISHED</div>
+                            </div>
+                        </div>
+                    )}
 
-                            {view === 'scanning' && (
-                                <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="w-full max-w-lg text-center">
-                                    <Activity className="w-16 h-16 text-accent-blue mx-auto mb-8 animate-pulse" />
-                                    <h2 className="text-2xl font-mono text-accent-blue mb-6 tracking-widest">PROCESSING...</h2>
-                                    <div className="bg-black/40 p-6 rounded-xl text-left font-mono text-xs text-green-400 h-64 overflow-y-auto border border-white/10 shadow-2xl">
-                                        {scanLog.map((l, i) => <div key={i} className="mb-2">{'>'} {l}</div>)}
+                    {/* VIEW: DASHBOARD / UPLOAD */}
+                    {view === 'dashboard' && (
+                        <div className="pt-32 pb-20 container mx-auto px-4 text-center">
+                            <h2 className="text-4xl font-bold mb-12">Select Evidence for Analysis</h2>
+                            <label className="glass-panel block w-full max-w-2xl mx-auto h-80 rounded-2xl border-2 border-dashed border-white/20 hover:border-neon-blue hover:bg-neon-blue/5 transition-all cursor-pointer flex flex-col items-center justify-center group relative overflow-hidden">
+                                <div className="scan-line hidden group-hover:block" />
+                                <Upload size={48} className="text-slate-500 group-hover:text-neon-blue mb-6 transition-colors"/>
+                                <span className="text-lg font-medium">Drop File to Scan</span>
+                                <span className="text-xs text-slate-500 mt-2 font-mono uppercase">Images • Video • Audio • PDF</span>
+                                <input type="file" className="hidden" onChange={runScan} />
+                            </label>
+                        </div>
+                    )}
+
+                    {/* VIEW: SCANNING */}
+                    {view === 'scanning' && (
+                        <div className="h-screen flex flex-col items-center justify-center">
+                            <div className="w-64 h-64 relative flex items-center justify-center">
+                                <div className="absolute inset-0 border-4 border-neon-blue/20 rounded-full animate-pulse" />
+                                <div className="absolute inset-0 border-t-4 border-neon-blue rounded-full animate-spin" />
+                                <Fingerprint size={64} className="text-neon-blue animate-pulse"/>
+                            </div>
+                            <h2 className="text-2xl font-mono mt-8 mb-4 text-neon-blue tracking-widest">ANALYSIS IN PROGRESS</h2>
+                            <div className="w-full max-w-md bg-black border border-white/10 p-4 font-mono text-xs h-40 overflow-hidden text-green-500">
+                                {scanStatus.log.map((l, i) => <div key={i}>&gt; {l}</div>)}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* VIEW: RESULTS (FBI DASHBOARD) */}
+                    {view === 'results' && report && (
+                        <div className="pt-24 pb-20 px-4 max-w-7xl mx-auto">
+                            <header className="flex justify-between items-center mb-8">
+                                <button onClick={() => setView('dashboard')} className="flex items-center gap-2 hover:text-neon-blue"><ChevronRight className="rotate-180"/> NEW SCAN</button>
+                                <div className="font-mono text-xs text-slate-500">CASE ID: {report.id}</div>
+                            </header>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                {/* SCORE CARD */}
+                                <div className="glass-panel p-8 rounded-2xl relative overflow-hidden">
+                                    <div className="text-xs font-mono text-slate-500 mb-2">AUTHENTICITY INTEGRITY</div>
+                                    <div className={`text-8xl font-black ${report.risk.riskScore > 50 ? 'text-neon-red' : 'text-neon-green'}`}>
+                                        {100 - report.risk.riskScore}%
                                     </div>
-                                </motion.div>
-                            )}
+                                    <div className={`inline-block px-3 py-1 rounded text-xs font-bold mt-4 ${report.risk.riskScore > 50 ? 'bg-red-900 text-red-200' : 'bg-green-900 text-green-200'}`}>
+                                        {report.risk.riskLevel}
+                                    </div>
+                                    <p className="mt-6 text-sm text-slate-300 leading-relaxed border-t border-white/10 pt-4">
+                                        {report.risk.executiveSummary}
+                                    </p>
+                                </div>
 
-                            {view === 'results' && report && (
-                                <motion.div initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-12 gap-6">
-                                    <div className="md:col-span-8 glass-panel p-10 rounded-3xl relative overflow-hidden flex flex-col justify-between min-h-[400px]">
-                                        <div className={`absolute top-0 right-0 p-10 opacity-10 ${report.risk.riskScore > 50 ? 'text-accent-danger' : 'text-accent-teal'}`}>
-                                            <Shield size={300} />
+                                {/* FORENSIC BREAKDOWN */}
+                                <div className="glass-panel p-8 rounded-2xl lg:col-span-2">
+                                    <h3 className="text-lg font-bold mb-6 flex items-center gap-2"><Scan size={20} className="text-neon-purple"/> Forensic Vectors</h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="p-4 bg-white/5 rounded border border-white/10">
+                                            <div className="text-xs text-slate-500 mb-1">AI PROBABILITY</div>
+                                            <div className="text-xl font-bold text-white">{(report.details?.forensic?.details?.aiArtifacts?.confidence * 100 || 0).toFixed(1)}%</div>
                                         </div>
-                                        <div>
-                                            <div className="text-sm font-mono text-slate-500 uppercase tracking-widest mb-4">Authenticity Score</div>
-                                            <div className={`text-9xl font-black tracking-tighter text-glow ${report.risk.riskScore > 50 ? 'text-accent-danger' : 'text-accent-teal'}`}>
-                                                {100 - report.risk.riskScore}
-                                            </div>
-                                            <div className="text-2xl text-slate-400 font-medium">/ 100</div>
+                                        <div className="p-4 bg-white/5 rounded border border-white/10">
+                                            <div className="text-xs text-slate-500 mb-1">METADATA INTEGRITY</div>
+                                            <div className="text-xl font-bold text-white">{report.details?.metadata?.fileIntegrity?.isExtensionSpoofed ? "COMPROMISED" : "VALID"}</div>
                                         </div>
-                                        <div className="mt-8 pt-8 border-t border-white/10">
-                                            <h3 className="text-sm font-bold text-slate-300 uppercase mb-2">Verdict</h3>
-                                            <p className="text-lg text-slate-400 leading-relaxed">{report.risk.executiveSummary}</p>
+                                        <div className="p-4 bg-white/5 rounded border border-white/10">
+                                            <div className="text-xs text-slate-500 mb-1">WEB MATCHES</div>
+                                            <div className="text-xl font-bold text-white">{report.details?.internet?.footprintAnalysis?.totalMatches || 0}</div>
+                                        </div>
+                                        <div className="p-4 bg-white/5 rounded border border-white/10">
+                                            <div className="text-xs text-slate-500 mb-1">SIGNATURE</div>
+                                            <div className="text-sm font-mono text-neon-blue truncate">{report.details?.metadata?.deviceFingerprint?.software || "UNKNOWN"}</div>
                                         </div>
                                     </div>
+                                </div>
 
-                                    <div className="md:col-span-4 flex flex-col gap-6">
-                                        <div className="glass-panel p-6 rounded-2xl flex-1">
-                                            <div className="flex items-center gap-2 mb-6 text-accent-purple"><FileSearch size={20} /> <h3 className="font-bold">METADATA</h3></div>
-                                            <div className="space-y-4">
-                                                <div className="flex justify-between border-b border-white/5 pb-2"><span className="text-xs text-slate-500">TYPE</span> <span>{file?.type}</span></div>
-                                                <div className="flex justify-between border-b border-white/5 pb-2"><span className="text-xs text-slate-500">AI PROBABILITY</span> <span className="text-accent-warning">{(report.details?.forensic?.details?.aiArtifacts?.confidence * 100 || 0).toFixed(1)}%</span></div>
-                                                <div className="flex justify-between border-b border-white/5 pb-2"><span className="text-xs text-slate-500">WEB MATCHES</span> <span>{report.details?.internet?.footprintAnalysis?.totalMatches || 0}</span></div>
-                                            </div>
-                                        </div>
-                                        {debugMode && (
-                                            <div className="glass-panel p-4 rounded-xl text-xs font-mono overflow-auto h-40">
-                                                <div className="flex items-center gap-2 mb-2 text-accent-warning"><Eye size={14}/> RAW DEBUG DATA</div>
-                                                <pre>{JSON.stringify(report, null, 2)}</pre>
-                                            </div>
-                                        )}
-                                        <button onClick={() => setView('landing')} className="w-full py-5 rounded-xl bg-white text-black font-bold hover:bg-slate-200 transition-colors text-lg">New Scan</button>
+                                {/* DEBUG TERMINAL (ADMIN ONLY) */}
+                                {user.email === CONFIG.ADMIN_EMAIL && (
+                                    <div className="lg:col-span-3 glass-panel p-4 rounded-xl font-mono text-xs text-green-400 h-64 overflow-auto bg-black">
+                                        <div className="mb-2 text-white font-bold border-b border-white/20 pb-2">Admin Debug Stream (Raw JSON)</div>
+                                        <pre>{JSON.stringify(debugData, null, 2)}</pre>
                                     </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </main>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                 </div>
             );
         };
