@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Backend Diagnostics Tool</title>
+    <style>
+        body { background: #111; color: #0f0; font-family: monospace; padding: 2rem; }
+        h1 { border-bottom: 1px solid #333; padding-bottom: 1rem; }
+        .box { background: #222; border: 1px solid #444; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        button { background: #0f0; color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; font-family: monospace; }
+        button:disabled { background: #555; cursor: not-allowed; }
+        pre { white-space: pre-wrap; word-wrap: break-word; }
+        .error { color: #ff5555; }
+        .status { color: #aaa; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <h1>🛠️ MediaProof Backend Diagnostic Tool</h1>
+
+    <div class="box">
+        <h3>1. Configuration Check</h3>
+        <p><strong>Cloudinary:</strong> dphicbaf2 / yhqlojie</p>
+        <p><strong>Orchestrator:</strong> <span id="orchUrl">https://mediaproofai.mediaproofai.workers.dev</span></p>
+    </div>
+
+    <div class="box">
+        <h3>2. Upload Test File</h3>
+        <input type="file" id="fileInput" />
+        <br><br>
+        <button onclick="runTest()" id="btn">RUN DIAGNOSTIC SCAN</button>
+        <div class="status" id="status">Waiting...</div>
+    </div>
+
+    <div class="box">
+        <h3>3. Raw Server Response</h3>
+        <pre id="output">No data yet.</pre>
+    </div>
+
+    <script>
+        const CONFIG = {
+            CLOUD_URL: "https://api.cloudinary.com/v1_1/dphicbaf2/auto/upload",
+            PRESET: "yhqlojie",
+            WORKER: "https://mediaproofai.mediaproofai.workers.dev"
+        };
+
+        async function runTest() {
+            const file = document.getElementById('fileInput').files[0];
+            const out = document.getElementById('output');
+            const stat = document.getElementById('status');
+            const btn = document.getElementById('btn');
+
+            if (!file) { alert("Please select a file first"); return; }
+
+            btn.disabled = true;
+            out.textContent = "Processing...";
+            out.className = "";
+
+            try {
+                // STEP 1: UPLOAD
+                stat.textContent = "Step 1: Uploading to Cloudinary...";
+                const fd = new FormData();
+                fd.append('file', file);
+                fd.append('upload_preset', CONFIG.PRESET);
+                
+                const upRes = await fetch(CONFIG.CLOUD_URL, { method: 'POST', body: fd });
+                const upData = await upRes.json();
+
+                if (!upData.secure_url) {
+                    throw new Error("Cloudinary Upload Failed: " + JSON.stringify(upData));
+                }
+                
+                const publicUrl = upData.secure_url;
+                stat.textContent = `Step 2: Upload Success. Sending URL to Backend... (${publicUrl})`;
+
+                // STEP 2: BACKEND CALL
+                const payload = { 
+                    mediaUrl: publicUrl, 
+                    type: file.type.startsWith('image') ? 'image' : 'video' 
+                };
+
+                const workerRes = await fetch(CONFIG.WORKER, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const status = workerRes.status;
+                const text = await workerRes.text(); // Get text first in case JSON fails
+
+                let json;
+                try {
+                    json = JSON.parse(text);
+                } catch (e) {
+                    throw new Error(`Backend returned Non-JSON response (Status ${status}):\n${text}`);
+                }
+
+                stat.textContent = `Step 3: Backend Responded (Status: ${status})`;
+                
+                // PRETTY PRINT JSON
+                out.textContent = JSON.stringify(json, null, 4);
+
+                if (status !== 200 || json.error) {
+                    out.className = "error";
+                }
+
+            } catch (err) {
+                stat.textContent = "❌ CRITICAL FAILURE";
+                out.textContent = err.message;
+                out.className = "error";
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
