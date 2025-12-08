@@ -7,11 +7,12 @@
         body { background: #111; color: #0f0; font-family: monospace; padding: 2rem; }
         h1 { border-bottom: 1px solid #333; padding-bottom: 1rem; }
         .box { background: #222; border: 1px solid #444; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
-        button { background: #0f0; color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; font-family: monospace; }
+        button { background: #0f0; color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; font-family: monospace; font-size: 16px; }
         button:disabled { background: #555; cursor: not-allowed; }
-        pre { white-space: pre-wrap; word-wrap: break-word; }
-        .error { color: #ff5555; }
-        .status { color: #aaa; margin-bottom: 10px; }
+        pre { white-space: pre-wrap; word-wrap: break-word; background: #000; padding: 10px; border: 1px solid #333; color: #fff; }
+        .error { color: #ff5555; border-color: #ff5555; }
+        .status { color: #aaa; margin-bottom: 10px; font-weight: bold; }
+        .success { color: #0f0; }
     </style>
 </head>
 <body>
@@ -28,35 +29,44 @@
         <input type="file" id="fileInput" />
         <br><br>
         <button onclick="runTest()" id="btn">RUN DIAGNOSTIC SCAN</button>
-        <div class="status" id="status">Waiting...</div>
+        <br><br>
+        <div class="status" id="status">Waiting for input...</div>
     </div>
 
     <div class="box">
         <h3>3. Raw Server Response</h3>
+        <p>This is exactly what your Cloudflare Worker is sending back. If this is red, the error is in the backend.</p>
         <pre id="output">No data yet.</pre>
     </div>
 
     <script>
+        // --- YOUR CONFIGURATION ---
         const CONFIG = {
             CLOUD_URL: "https://api.cloudinary.com/v1_1/dphicbaf2/auto/upload",
             PRESET: "yhqlojie",
-            WORKER: "https://mediaproofai.mediaproofai.workers.dev"
+            // Note: I removed the trailing slash just in case
+            WORKER: "https://mediaproofai.mediaproofai.workers.dev" 
         };
 
         async function runTest() {
-            const file = document.getElementById('fileInput').files[0];
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
             const out = document.getElementById('output');
             const stat = document.getElementById('status');
             const btn = document.getElementById('btn');
 
-            if (!file) { alert("Please select a file first"); return; }
+            if (!file) { 
+                alert("Please select a file first"); 
+                return; 
+            }
 
             btn.disabled = true;
             out.textContent = "Processing...";
             out.className = "";
+            out.style.borderColor = "#333";
 
             try {
-                // STEP 1: UPLOAD
+                // --- STEP 1: UPLOAD TO CLOUDINARY ---
                 stat.textContent = "Step 1: Uploading to Cloudinary...";
                 const fd = new FormData();
                 fd.append('file', file);
@@ -66,13 +76,13 @@
                 const upData = await upRes.json();
 
                 if (!upData.secure_url) {
-                    throw new Error("Cloudinary Upload Failed: " + JSON.stringify(upData));
+                    throw new Error("Cloudinary Upload Failed:\n" + JSON.stringify(upData, null, 2));
                 }
                 
                 const publicUrl = upData.secure_url;
-                stat.textContent = `Step 2: Upload Success. Sending URL to Backend... (${publicUrl})`;
+                stat.innerHTML = `Step 2: Upload Success. <br>URL: <a href="${publicUrl}" target="_blank" style="color:#0f0">${publicUrl}</a><br>Sending to Backend...`;
 
-                // STEP 2: BACKEND CALL
+                // --- STEP 2: CALL CLOUDFLARE WORKER ---
                 const payload = { 
                     mediaUrl: publicUrl, 
                     type: file.type.startsWith('image') ? 'image' : 'video' 
@@ -85,26 +95,30 @@
                 });
 
                 const status = workerRes.status;
-                const text = await workerRes.text(); // Get text first in case JSON fails
-
-                let json;
-                try {
-                    json = JSON.parse(text);
-                } catch (e) {
-                    throw new Error(`Backend returned Non-JSON response (Status ${status}):\n${text}`);
-                }
+                const text = await workerRes.text(); // Get raw text first to debug non-JSON errors
 
                 stat.textContent = `Step 3: Backend Responded (Status: ${status})`;
                 
-                // PRETTY PRINT JSON
-                out.textContent = JSON.stringify(json, null, 4);
-
-                if (status !== 200 || json.error) {
+                // Try to parse JSON
+                try {
+                    const json = JSON.parse(text);
+                    out.textContent = JSON.stringify(json, null, 4); // Pretty print
+                    
+                    if (status === 200 && !json.error) {
+                        out.style.borderColor = "#0f0";
+                        stat.className = "status success";
+                        stat.textContent += " - SUCCESS!";
+                    } else {
+                        out.className = "error";
+                    }
+                } catch (e) {
+                    // If it's not JSON, it's usually a crash report (HTML) or text error
+                    out.textContent = `CRITICAL ERROR (Non-JSON Response):\n\n${text}`;
                     out.className = "error";
                 }
 
             } catch (err) {
-                stat.textContent = "❌ CRITICAL FAILURE";
+                stat.textContent = "❌ TEST FAILED";
                 out.textContent = err.message;
                 out.className = "error";
             } finally {
