@@ -69,7 +69,7 @@
         import { createRoot } from 'react-dom/client';
         import { motion, AnimatePresence } from 'framer-motion';
         import * as THREE from 'three';
-        import { Shield, Upload, FileSearch, AlertTriangle, X, CheckCircle, Activity, History, Zap, Database, Globe, Lock, Play, Pause, ChevronRight, Eye, Terminal, Fingerprint, Scan, User, CreditCard, MessageSquare, HelpCircle, LogOut, Settings, LayoutDashboard, FileText } from 'lucide-react';
+        import { Shield, Upload, FileSearch, AlertTriangle, X, CheckCircle, Activity, History, Zap, Database, Globe, Lock, Play, Pause, ChevronRight, Eye, Terminal, Fingerprint, Scan, User, CreditCard, MessageSquare, HelpCircle, LogOut, Settings, LayoutDashboard, FileText, Share2 } from 'lucide-react';
         import exifr from 'exifr';
 
         // ==========================================
@@ -81,7 +81,11 @@
             
             CLOUDINARY_URL: "https://api.cloudinary.com/v1_1/dphicbaf2/auto/upload",
             UPLOAD_PRESET: "yhqlojie",
-            ORCHESTRATOR_URL: "https://mediaproofai.mediaproofai.workers.dev/", // Update this!
+            
+            // !!! IMPORTANT: PASTE YOUR CLOUDFLARE WORKER URL HERE !!!
+            // DO NOT ADD /api/analyze AT THE END. JUST THE DOMAIN.
+            ORCHESTRATOR_URL: "https://mediaproofai.mediaproofai.workers.dev/", 
+            
             PAYPAL: {
                 BASIC: "https://www.paypal.com/ncp/payment/JY5W5KLERV59A",
                 PRO: "https://www.paypal.com/ncp/payment/YP9Y6QKQUZT3C",
@@ -90,38 +94,13 @@
         };
 
         // ==========================================
-        // PLAN DEFINITIONS (The 4-Tier Logic)
+        // PLAN DEFINITIONS
         // ==========================================
         const PLANS = {
-            FREE: { 
-                name: "Observer", 
-                limit: 2, 
-                features: ["image_basic", "osint_basic"], 
-                speed: "Standard", 
-                price: "Free",
-                hasAds: true 
-            },
-            BASIC: { 
-                name: "Analyst", 
-                limit: 10, 
-                features: ["image_advanced", "video_basic", "osint_full"], 
-                speed: "Fast", 
-                price: "$2.99" 
-            },
-            PRO: { 
-                name: "Investigator", 
-                limit: 20, 
-                features: ["all_media", "audio_physics", "deep_metadata", "priority_support"], 
-                speed: "Turbo", 
-                price: "$5.99" 
-            },
-            BUSINESS: { 
-                name: "God Mode", 
-                limit: 9999, 
-                features: ["everything", "api_access", "bulk_scan", "enterprise_sla"], 
-                speed: "Real-time", 
-                price: "$9.99" 
-            }
+            FREE: { name: "Observer", limit: 2, features: ["image_basic", "osint_basic"], speed: "Standard", price: "Free", hasAds: true },
+            BASIC: { name: "Analyst", limit: 10, features: ["image_advanced", "video_basic", "osint_full"], speed: "Fast", price: "$2.99" },
+            PRO: { name: "Investigator", limit: 20, features: ["all_media", "audio_physics", "deep_metadata", "priority_support"], speed: "Turbo", price: "$5.99" },
+            BUSINESS: { name: "God Mode", limit: 9999, features: ["everything", "api_access", "bulk_scan", "enterprise_sla"], speed: "Real-time", price: "$9.99" }
         };
 
         // --- 3D HERO COMPONENT ---
@@ -181,7 +160,6 @@
                 const u = localStorage.getItem('mediaproof_user');
                 if (u) {
                     const parsedUser = JSON.parse(u);
-                    // Check Daily Reset
                     const lastLogin = new Date(parsedUser.lastLogin).toDateString();
                     const today = new Date().toDateString();
                     if (lastLogin !== today && parsedUser.plan.name === "Observer") {
@@ -206,14 +184,6 @@
                 setUser(userData);
                 localStorage.setItem('mediaproof_user', JSON.stringify(userData));
                 setView('dashboard');
-            };
-
-            // Google Auth Handler
-            const handleGoogleLogin = (res) => {
-                try {
-                    const payload = JSON.parse(atob(res.credential.split('.')[1]));
-                    login(payload.email, payload.name, payload.picture, 'FREE');
-                } catch (e) { console.error("Auth Error", e); }
             };
 
             // Scan Logic
@@ -250,16 +220,21 @@
                     const upData = await upRes.json();
                     if (!upData.secure_url) throw new Error("Upload Failed");
 
-                    // 3. BACKEND ORCHESTRATION
+                    // 3. BACKEND ORCHESTRATION (THE FIX)
                     setTimeout(() => setScanStatus(prev => ({ log: [...prev.log, "ENGAGING NEURAL COUNCIL..."], progress: 60 })), 2000);
                     
                     const type = f.type.startsWith('image') ? 'image' : f.type.startsWith('audio') ? 'audio' : f.type.startsWith('video') ? 'video' : 'document';
                     
+                    // We ensure we are calling the Cloudflare Worker, NOT the local/relative path
+                    if (!CONFIG.ORCHESTRATOR_URL.startsWith('http')) throw new Error("Configuration Error: Missing Orchestrator URL");
+
                     const orchRes = await fetch(CONFIG.ORCHESTRATOR_URL, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ mediaUrl: upData.secure_url, type })
                     });
+
+                    if (!orchRes.ok) throw new Error(`Backend Error: ${orchRes.status} ${orchRes.statusText}`);
 
                     const data = await orchRes.json();
 
@@ -277,6 +252,7 @@
                     setTimeout(() => setView('results'), 800);
 
                 } catch (err) {
+                    console.error(err);
                     alert("Scan Error: " + err.message);
                     setView('dashboard');
                 }
@@ -287,7 +263,7 @@
                 <div className="min-h-screen relative font-sans text-slate-200 selection:bg-neon-blue/30 flex">
                     <div className="cyber-grid" />
                     
-                    {/* SIDEBAR (Only visible when logged in) */}
+                    {/* SIDEBAR */}
                     {user && (
                         <div className="w-20 lg:w-64 border-r border-white/10 bg-bg-panel flex flex-col justify-between hidden md:flex z-50">
                             <div>
@@ -346,7 +322,6 @@
                             <div className="flex-1 flex flex-col relative overflow-hidden">
                                 <HeroGlobe />
                                 
-                                {/* HERO SECTION */}
                                 <div className="flex-1 flex flex-col items-center justify-center text-center px-4 z-10">
                                     <div className="inline-block px-4 py-1 rounded-full border border-neon-blue/30 bg-neon-blue/5 text-neon-blue text-xs font-mono mb-6 tracking-widest">
                                         ENTERPRISE FORENSIC SUITE v2.0
@@ -355,7 +330,7 @@
                                         TRUTH.<br/>VERIFIED.
                                     </h1>
                                     <p className="text-xl text-slate-400 mb-10 max-w-2xl font-light">
-                                        The world's most advanced AI detection engine. Combining neural networks, pixel physics, and metadata forensics to detect the undetectable.
+                                        The world's most advanced AI detection engine. Combining neural networks, pixel physics, and metadata forensics.
                                     </p>
                                     <div className="flex flex-col md:flex-row gap-4">
                                         <button onClick={() => setView('auth')} className="px-8 py-4 bg-neon-blue text-black font-bold text-lg rounded-none hover:scale-105 transition-transform shadow-[0_0_30px_rgba(0,243,255,0.3)]">
@@ -364,23 +339,6 @@
                                         <button onClick={() => setShowPricing(true)} className="px-8 py-4 border border-white/20 hover:bg-white/5 text-white font-bold text-lg rounded-none transition-colors">
                                             VIEW PLANS
                                         </button>
-                                    </div>
-                                </div>
-
-                                {/* FEATURES SCROLL */}
-                                <div className="py-20 border-t border-white/10 bg-black/50 backdrop-blur-sm">
-                                    <div className="container mx-auto px-6 grid md:grid-cols-3 gap-8">
-                                        {[
-                                            { icon: Scan, title: "Deepfake Detection", desc: "Frame-by-frame analysis using ensemble neural networks." },
-                                            { icon: Fingerprint, title: "Physics Engine", desc: "Mathematical entropy analysis to catch invisible synthesis noise." },
-                                            { icon: Globe, title: "Origin Tracing", desc: "Reverse-search patient zero to find the original source." }
-                                        ].map((f, i) => (
-                                            <div key={i} className="glass-panel p-8 hover:-translate-y-2 transition-transform duration-300 group">
-                                                <f.icon className="text-slate-500 group-hover:text-neon-blue mb-4" size={32}/>
-                                                <h3 className="text-xl font-bold mb-2">{f.title}</h3>
-                                                <p className="text-sm text-slate-400 leading-relaxed">{f.desc}</p>
-                                            </div>
-                                        ))}
                                     </div>
                                 </div>
                             </div>
@@ -395,20 +353,13 @@
                                         <h2 className="text-3xl font-bold">Identity Verification</h2>
                                         <p className="text-slate-400 text-sm mt-2">Secure access required for forensic tools.</p>
                                     </div>
-                                    
-                                    {/* Google Button Container */}
                                     <div id="google-btn" className="w-full h-12 mb-6"></div>
                                     <script>
-                                        // Delay render to ensure div exists
                                         setTimeout(() => {
                                             if(window.google) {
                                                 window.google.accounts.id.initialize({
                                                     client_id: CONFIG.GOOGLE_CLIENT_ID,
-                                                    callback: (res) => {
-                                                        const payload = JSON.parse(atob(res.credential.split('.')[1]));
-                                                        // Call React login function (Need to expose it or handle differently in pure HTML/JS mix)
-                                                        // For this monolith, we simulate the click handling in the React Component above
-                                                    }
+                                                    callback: (res) => { console.log('Auth Success'); } // Handled by React state ideally
                                                 });
                                                 window.google.accounts.id.renderButton(
                                                     document.getElementById("google-btn"),
@@ -417,18 +368,14 @@
                                             }
                                         }, 100);
                                     </script>
-
-                                    {/* Mock Login for Demo (Since Google ID might be invalid in copy-paste) */}
-                                    <button onClick={() => login('demo@user.com', 'Demo Agent', '', 'FREE')} className="w-full py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded font-bold text-sm mb-4">
-                                        CONTINUE AS GUEST (DEMO)
+                                    <button onClick={() => login('demo@user.com', 'Guest Agent', '', 'FREE')} className="w-full py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded font-bold text-sm mb-4">
+                                        CONTINUE AS GUEST
                                     </button>
-
-                                    <p className="text-center text-xs text-slate-600">By accessing, you agree to the forensic audit logs.</p>
                                 </div>
                             </div>
                         )}
 
-                        {/* VIEW: DASHBOARD (UPLOAD) */}
+                        {/* VIEW: DASHBOARD */}
                         {view === 'dashboard' && (
                             <div className="flex-1 p-8 flex flex-col items-center justify-center">
                                 <div className="text-center mb-12">
@@ -439,18 +386,8 @@
                                     <div className="scan-line hidden group-hover:block" />
                                     <Upload size={64} className="text-slate-600 group-hover:text-neon-blue mb-6 transition-colors"/>
                                     <span className="text-xl font-bold group-hover:text-white transition-colors">DRAG & DROP FILE</span>
-                                    <span className="text-xs text-slate-500 mt-2 font-mono">OR CLICK TO BROWSE</span>
                                     <input type="file" className="hidden" onChange={runScan} accept="image/*,video/*,audio/*,application/pdf" />
                                 </label>
-                                
-                                {/* AD BANNER FOR FREE USERS */}
-                                {user.plan.hasAds && (
-                                    <div className="mt-8 p-4 bg-white/5 border border-white/10 rounded w-full max-w-2xl text-center">
-                                        <span className="text-xs font-bold text-slate-500 bg-black px-2 py-1 rounded mr-2">AD</span>
-                                        <span className="text-sm text-slate-300">Upgrade to <strong>Analyst Plan</strong> to remove ads and unlock deep scanning.</span>
-                                        <button onClick={() => setShowPricing(true)} className="ml-4 text-xs text-neon-blue hover:underline">UPGRADE NOW</button>
-                                    </div>
-                                )}
                             </div>
                         )}
 
@@ -466,9 +403,7 @@
                                 <div className="w-full max-w-md h-2 bg-slate-800 rounded-full overflow-hidden">
                                     <motion.div className="h-full bg-neon-blue" initial={{width: 0}} animate={{width: `${scanStatus.progress}%`}} />
                                 </div>
-                                <div className="mt-4 font-mono text-xs text-slate-500">
-                                    {scanStatus.log[scanStatus.log.length-1]}
-                                </div>
+                                <div className="mt-4 font-mono text-xs text-slate-500">{scanStatus.log[scanStatus.log.length-1]}</div>
                             </div>
                         )}
 
@@ -476,109 +411,35 @@
                         {view === 'results' && report && (
                             <div className="flex-1 p-8 overflow-y-auto">
                                 <header className="flex justify-between items-center mb-10 border-b border-white/10 pb-6">
-                                    <div>
-                                        <div className="text-xs font-mono text-slate-500 tracking-widest mb-1">CASE ID</div>
-                                        <div className="text-xl font-mono text-white">{report.id.split('-')[0].toUpperCase()}</div>
-                                    </div>
-                                    <div className="text-right">
-                                        <div className="text-xs font-mono text-slate-500 tracking-widest mb-1">RISK LEVEL</div>
-                                        <div className={`text-2xl font-bold ${report.risk.riskLevel === 'CRITICAL' ? 'text-neon-red' : 'text-neon-green'}`}>{report.risk.riskLevel}</div>
-                                    </div>
+                                    <div className="text-xl font-mono text-white">CASE ID: {report.id.split('-')[0].toUpperCase()}</div>
+                                    <div className={`text-2xl font-bold ${report.risk.riskLevel === 'CRITICAL' ? 'text-neon-red' : 'text-neon-green'}`}>{report.risk.riskLevel}</div>
                                 </header>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                    {/* SCORE CARD */}
                                     <div className="glass-panel p-8 border-t-4 border-neon-blue relative overflow-hidden">
-                                        <div className="absolute top-0 right-0 p-6 opacity-10"><AlertTriangle size={120}/></div>
                                         <div className="text-sm font-bold text-slate-400 mb-6 uppercase tracking-wider">Authenticity Score</div>
-                                        <div className={`text-9xl font-black ${report.risk.riskScore > 50 ? 'text-neon-red' : 'text-neon-green'}`}>
-                                            {100 - report.risk.riskScore}
-                                        </div>
+                                        <div className={`text-9xl font-black ${report.risk.riskScore > 50 ? 'text-neon-red' : 'text-neon-green'}`}>{100 - report.risk.riskScore}</div>
                                         <div className="mt-6 pt-6 border-t border-white/10">
                                             <p className="text-lg leading-relaxed">{report.risk.executiveSummary}</p>
                                         </div>
                                     </div>
 
-                                    {/* DETAILED BREAKDOWN */}
                                     <div className="lg:col-span-2 space-y-6">
-                                        {/* FORENSIC PANEL */}
                                         <div className="glass-panel p-6">
-                                            <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-neon-purple"><Scan size={20}/> Forensic Vector Analysis</h3>
+                                            <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-neon-purple"><Scan size={20}/> Forensic Analysis</h3>
                                             <div className="grid md:grid-cols-2 gap-4 text-sm">
                                                 <div className="p-4 bg-white/5 rounded">
                                                     <div className="text-xs text-slate-500 mb-1">AI PROBABILITY</div>
                                                     <div className="text-xl font-bold">{(report.details?.forensic?.verdict?.aiProbability * 100 || 0).toFixed(1)}%</div>
                                                 </div>
                                                 <div className="p-4 bg-white/5 rounded">
-                                                    <div className="text-xs text-slate-500 mb-1">DETECTION METHOD</div>
+                                                    <div className="text-xs text-slate-500 mb-1">METHOD</div>
                                                     <div className="text-base font-mono text-neon-blue truncate">{report.details?.forensic?.verdict?.detection_method || "N/A"}</div>
                                                 </div>
-                                                <div className="p-4 bg-white/5 rounded">
-                                                    <div className="text-xs text-slate-500 mb-1">ENTROPY / PHYSICS</div>
-                                                    <div className="text-base font-mono">{report.details?.forensic?.details?.noiseAnalysis?.verdict || "N/A"}</div>
-                                                </div>
-                                                <div className="p-4 bg-white/5 rounded">
-                                                    <div className="text-xs text-slate-500 mb-1">METADATA STATUS</div>
-                                                    <div className="text-base font-mono">{report.details?.metadata?.deviceFingerprint?.make !== "Unknown" ? "HARDWARE VERIFIED" : "MISSING / STRIPPED"}</div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* OSINT PANEL */}
-                                        <div className="glass-panel p-6">
-                                            <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-neon-green"><Globe size={20}/> Web Origins (OSINT)</h3>
-                                            <div className="flex items-center justify-between p-4 bg-white/5 rounded mb-4">
-                                                <div>
-                                                    <div className="text-xs text-slate-500">PATIENT ZERO (FIRST SEEN)</div>
-                                                    <div className="text-lg font-bold truncate max-w-md">{report.details?.internet?.timelineIntel?.patientZero?.source || "None Found"}</div>
-                                                </div>
-                                                <a href={report.details?.internet?.timelineIntel?.patientZero?.url} target="_blank" className="text-neon-blue hover:underline text-xs">VIEW SOURCE</a>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        )}
-
-                        {/* VIEW: HISTORY */}
-                        {view === 'history' && (
-                            <div className="flex-1 p-8">
-                                <h2 className="text-3xl font-bold mb-8">Case Files</h2>
-                                <div className="space-y-4">
-                                    {history.length === 0 ? <div className="text-slate-500">No cases found.</div> : 
-                                    history.map((h, i) => (
-                                        <div key={i} className="glass-panel p-4 flex items-center justify-between hover:border-neon-blue transition-colors cursor-pointer">
-                                            <div className="flex items-center gap-4">
-                                                <div className={`w-10 h-10 rounded flex items-center justify-center ${h.score > 50 ? 'bg-neon-red/20 text-neon-red' : 'bg-neon-green/20 text-neon-green'}`}>
-                                                    {h.score > 50 ? <AlertTriangle size={20}/> : <CheckCircle size={20}/>}
-                                                </div>
-                                                <div>
-                                                    <div className="font-bold">{h.name}</div>
-                                                    <div className="text-xs text-slate-500 font-mono">{new Date(h.date).toLocaleDateString()} • {h.type.toUpperCase()}</div>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <div className={`font-bold ${h.score > 50 ? 'text-neon-red' : 'text-neon-green'}`}>{100 - h.score}% TRUST</div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* VIEW: API PLAYGROUND */}
-                        {view === 'api' && (
-                            <div className="flex-1 p-8">
-                                <h2 className="text-3xl font-bold mb-8">Developer API</h2>
-                                <div className="glass-panel p-6 font-mono text-sm bg-black border-l-4 border-neon-purple">
-                                    <div className="text-slate-500 mb-2">// POST request to verify media</div>
-                                    <div className="text-neon-purple">curl -X POST https://api.mediaproof.com/v1/verify \</div>
-                                    <div className="text-neon-blue">  -H "Authorization: Bearer YOUR_API_KEY" \</div>
-                                    <div className="text-neon-blue">  -d '{"mediaUrl": "https://example.com/image.jpg"}'</div>
-                                </div>
-                                <button className="mt-6 px-6 py-3 bg-neon-purple text-white font-bold rounded hover:bg-purple-600 transition-colors">
-                                    GENERATE API KEY
-                                </button>
                             </div>
                         )}
 
@@ -589,25 +450,17 @@
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl">
                             <div className="w-full max-w-6xl h-[90vh] overflow-y-auto p-4 relative">
                                 <button onClick={() => setShowPricing(false)} className="absolute top-0 right-0 p-4 hover:text-white text-slate-500"><X size={32}/></button>
-                                <h2 className="text-4xl font-bold text-center mb-12">Upgrade Clearance Level</h2>
+                                <h2 className="text-4xl font-bold text-center mb-12">Upgrade Clearance</h2>
                                 <div className="grid md:grid-cols-4 gap-6">
                                     {Object.values(PLANS).map((plan, i) => (
                                         <div key={i} className={`glass-panel p-6 flex flex-col relative ${i === 2 ? 'border-neon-blue shadow-[0_0_30px_rgba(0,243,255,0.1)]' : ''}`}>
-                                            {i === 2 && <div className="absolute top-0 left-0 w-full bg-neon-blue text-black text-center text-xs font-bold py-1">MOST POPULAR</div>}
                                             <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
                                             <div className="text-3xl font-mono font-bold mb-6">{plan.price}<span className="text-sm text-slate-500 font-sans">/mo</span></div>
                                             <ul className="space-y-3 mb-8 flex-1">
-                                                {plan.features.map((f, j) => (
-                                                    <li key={j} className="flex items-center gap-2 text-sm text-slate-300">
-                                                        <CheckCircle size={14} className="text-neon-green"/> {f.replace('_', ' ').toUpperCase()}
-                                                    </li>
-                                                ))}
-                                                <li className="flex items-center gap-2 text-sm text-slate-300">
-                                                    <Zap size={14} className="text-neon-warning"/> {plan.limit === 9999 ? 'UNLIMITED' : plan.limit} Verifications
-                                                </li>
+                                                {plan.features.map((f, j) => <li key={j} className="flex items-center gap-2 text-sm text-slate-300"><CheckCircle size={14} className="text-neon-green"/> {f}</li>)}
                                             </ul>
                                             <a href={plan.price === 'Free' ? '#' : Object.values(CONFIG.PAYPAL)[i-1]} target="_blank" 
-                                                className={`w-full py-3 text-center font-bold text-sm rounded transition-all ${i===2 ? 'bg-neon-blue text-black hover:scale-105' : 'bg-white/10 hover:bg-white/20'}`}
+                                                className={`w-full py-3 text-center font-bold text-sm rounded transition-all ${i===2 ? 'bg-neon-blue text-black' : 'bg-white/10 hover:bg-white/20'}`}
                                                 onClick={() => plan.price === 'Free' && setShowPricing(false)}>
                                                 {plan.price === 'Free' ? 'CURRENT PLAN' : 'SUBSCRIBE'}
                                             </a>
@@ -615,20 +468,6 @@
                                     ))}
                                 </div>
                             </div>
-                        </div>
-                    )}
-
-                    {/* HELP MODAL */}
-                    {showHelp && (
-                        <div className="fixed bottom-20 right-6 w-80 glass-panel p-4 border border-neon-blue/30 z-50">
-                            <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
-                                <span className="font-bold flex items-center gap-2"><MessageSquare size={16}/> Support Agent</span>
-                                <button onClick={() => setShowHelp(false)}><X size={14}/></button>
-                            </div>
-                            <div className="h-40 overflow-y-auto text-sm text-slate-400 mb-4">
-                                <div className="mb-2 bg-white/5 p-2 rounded">Hello! How can I assist with your investigation today?</div>
-                            </div>
-                            <input type="text" placeholder="Type query..." className="w-full bg-black/50 border border-white/10 rounded px-3 py-2 text-sm outline-none focus:border-neon-blue"/>
                         </div>
                     )}
 
