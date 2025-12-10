@@ -1,130 +1,643 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <title>Backend Diagnostics Tool</title>
-    <style>
-        body { background: #111; color: #0f0; font-family: monospace; padding: 2rem; }
-        h1 { border-bottom: 1px solid #333; padding-bottom: 1rem; }
-        .box { background: #222; border: 1px solid #444; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
-        button { background: #0f0; color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; font-family: monospace; font-size: 16px; }
-        button:disabled { background: #555; cursor: not-allowed; }
-        pre { white-space: pre-wrap; word-wrap: break-word; background: #000; padding: 10px; border: 1px solid #333; color: #fff; }
-        .error { color: #ff5555; border-color: #ff5555; }
-        .status { color: #aaa; margin-bottom: 10px; font-weight: bold; }
-        .success { color: #0f0; }
-    </style>
-</head>
-<body>
-    <h1>🛠️ MediaProof Backend Diagnostic Tool</h1>
-
-    <div class="box">
-        <h3>1. Configuration Check</h3>
-        <p><strong>Cloudinary:</strong> dphicbaf2 / yhqlojie</p>
-        <p><strong>Orchestrator:</strong> <span id="orchUrl">https://mediaproofai.mediaproofai.workers.dev</span></p>
-    </div>
-
-    <div class="box">
-        <h3>2. Upload Test File</h3>
-        <input type="file" id="fileInput" />
-        <br><br>
-        <button onclick="runTest()" id="btn">RUN DIAGNOSTIC SCAN</button>
-        <br><br>
-        <div class="status" id="status">Waiting for input...</div>
-    </div>
-
-    <div class="box">
-        <h3>3. Raw Server Response</h3>
-        <p>This is exactly what your Cloudflare Worker is sending back. If this is red, the error is in the backend.</p>
-        <pre id="output">No data yet.</pre>
-    </div>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MediaProof | The Truth Layer</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
     <script>
-        // --- YOUR CONFIGURATION ---
-        const CONFIG = {
-            CLOUD_URL: "https://api.cloudinary.com/v1_1/dphicbaf2/auto/upload",
-            PRESET: "yhqlojie",
-            // Note: I removed the trailing slash just in case
-            WORKER: "https://mediaproofai.mediaproofai.workers.dev" 
-        };
-
-        async function runTest() {
-            const fileInput = document.getElementById('fileInput');
-            const file = fileInput.files[0];
-            const out = document.getElementById('output');
-            const stat = document.getElementById('status');
-            const btn = document.getElementById('btn');
-
-            if (!file) { 
-                alert("Please select a file first"); 
-                return; 
-            }
-
-            btn.disabled = true;
-            out.textContent = "Processing...";
-            out.className = "";
-            out.style.borderColor = "#333";
-
-            try {
-                // --- STEP 1: UPLOAD TO CLOUDINARY ---
-                stat.textContent = "Step 1: Uploading to Cloudinary...";
-                const fd = new FormData();
-                fd.append('file', file);
-                fd.append('upload_preset', CONFIG.PRESET);
-                
-                const upRes = await fetch(CONFIG.CLOUD_URL, { method: 'POST', body: fd });
-                const upData = await upRes.json();
-
-                if (!upData.secure_url) {
-                    throw new Error("Cloudinary Upload Failed:\n" + JSON.stringify(upData, null, 2));
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Space Grotesk', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+                    colors: { 
+                        bg: { deep: '#000000', panel: '#050505', surface: '#0A0A0F' },
+                        neon: { blue: '#00F3FF', purple: '#9D00FF', red: '#FF003C', green: '#00FF94', warning: '#FFEA00' }
+                    },
+                    animation: { 'scan': 'scan 2s linear infinite', 'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite' },
+                    keyframes: { scan: { '0%': { transform: 'translateY(-100%)' }, '100%': { transform: 'translateY(100%)' } } }
                 }
-                
-                const publicUrl = upData.secure_url;
-                stat.innerHTML = `Step 2: Upload Success. <br>URL: <a href="${publicUrl}" target="_blank" style="color:#0f0">${publicUrl}</a><br>Sending to Backend...`;
-
-                // --- STEP 2: CALL CLOUDFLARE WORKER ---
-                const payload = { 
-                    mediaUrl: publicUrl, 
-                    type: file.type.startsWith('image') ? 'image' : 'video' 
-                };
-
-                const workerRes = await fetch(CONFIG.WORKER, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const status = workerRes.status;
-                const text = await workerRes.text(); // Get raw text first to debug non-JSON errors
-
-                stat.textContent = `Step 3: Backend Responded (Status: ${status})`;
-                
-                // Try to parse JSON
-                try {
-                    const json = JSON.parse(text);
-                    out.textContent = JSON.stringify(json, null, 4); // Pretty print
-                    
-                    if (status === 200 && !json.error) {
-                        out.style.borderColor = "#0f0";
-                        stat.className = "status success";
-                        stat.textContent += " - SUCCESS!";
-                    } else {
-                        out.className = "error";
-                    }
-                } catch (e) {
-                    // If it's not JSON, it's usually a crash report (HTML) or text error
-                    out.textContent = `CRITICAL ERROR (Non-JSON Response):\n\n${text}`;
-                    out.className = "error";
-                }
-
-            } catch (err) {
-                stat.textContent = "❌ TEST FAILED";
-                out.textContent = err.message;
-                out.className = "error";
-            } finally {
-                btn.disabled = false;
             }
         }
+    </script>
+
+    <style>
+        body { background-color: #000; color: #fff; overflow-x: hidden; }
+        .cyber-grid {
+            position: fixed; inset: 0; z-index: -1; opacity: 0.15; pointer-events: none;
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(0, 243, 255, 0.1) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(0, 243, 255, 0.1) 1px, transparent 1px);
+            mask-image: radial-gradient(circle at 50% 50%, black 30%, transparent 80%);
+        }
+        .glass-panel {
+            background: rgba(10, 10, 15, 0.6); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+        }
+        .neon-border { box-shadow: 0 0 10px rgba(0, 243, 255, 0.1), inset 0 0 20px rgba(0, 243, 255, 0.05); border: 1px solid rgba(0, 243, 255, 0.3); }
+        .scan-line { position: absolute; top: 0; left: 0; right: 0; height: 2px; background: #00F3FF; box-shadow: 0 0 10px #00F3FF; animation: scan 2s linear infinite; opacity: 0.5; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #050507; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00F3FF; }
+    </style>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "react": "https://esm.sh/react@18.2.0",
+            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom",
+            "three": "https://esm.sh/three@0.160.0",
+            "lucide-react": "https://esm.sh/lucide-react@0.292.0?external=react,react-dom",
+            "exifr": "https://esm.sh/exifr@7.1.3" 
+        }
+    }
+    </script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useRef } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { motion, AnimatePresence } from 'framer-motion';
+        import * as THREE from 'three';
+        import { Shield, Upload, FileSearch, AlertTriangle, X, CheckCircle, Activity, History, Zap, Database, Globe, Lock, Play, Pause, ChevronRight, Eye, Terminal, Fingerprint, Scan, User, CreditCard, MessageSquare, HelpCircle, LogOut, Settings, LayoutDashboard, FileText } from 'lucide-react';
+        import exifr from 'exifr';
+
+        // ==========================================
+        // CONFIGURATION (FILL THESE IN)
+        // ==========================================
+        const CONFIG = {
+            // REPLACE THIS
+            GOOGLE_CLIENT_ID: "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com", 
+            
+            CLOUDINARY_URL: "https://api.cloudinary.com/v1_1/dphicbaf2/auto/upload",
+            UPLOAD_PRESET: "yhqlojie",
+            ORCHESTRATOR_URL: "https://mediaproofai.mediaproofai.workers.dev/", // Update this!
+            PAYPAL: {
+                BASIC: "https://www.paypal.com/ncp/payment/JY5W5KLERV59A",
+                PRO: "https://www.paypal.com/ncp/payment/YP9Y6QKQUZT3C",
+                BUSINESS: "https://www.paypal.com/ncp/payment/Z6LYJSUY5GPBQ"
+            }
+        };
+
+        // ==========================================
+        // PLAN DEFINITIONS (The 4-Tier Logic)
+        // ==========================================
+        const PLANS = {
+            FREE: { 
+                name: "Observer", 
+                limit: 2, 
+                features: ["image_basic", "osint_basic"], 
+                speed: "Standard", 
+                price: "Free",
+                hasAds: true 
+            },
+            BASIC: { 
+                name: "Analyst", 
+                limit: 10, 
+                features: ["image_advanced", "video_basic", "osint_full"], 
+                speed: "Fast", 
+                price: "$2.99" 
+            },
+            PRO: { 
+                name: "Investigator", 
+                limit: 20, 
+                features: ["all_media", "audio_physics", "deep_metadata", "priority_support"], 
+                speed: "Turbo", 
+                price: "$5.99" 
+            },
+            BUSINESS: { 
+                name: "God Mode", 
+                limit: 9999, 
+                features: ["everything", "api_access", "bulk_scan", "enterprise_sla"], 
+                speed: "Real-time", 
+                price: "$9.99" 
+            }
+        };
+
+        // --- 3D HERO COMPONENT ---
+        const HeroGlobe = () => {
+            const mountRef = useRef(null);
+            useEffect(() => {
+                if (!mountRef.current) return;
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+                const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+                renderer.setSize(600, 600);
+                mountRef.current.appendChild(renderer.domElement);
+
+                // Particles
+                const geometry = new THREE.BufferGeometry();
+                const particles = 1500;
+                const positions = new Float32Array(particles * 3);
+                for(let i=0; i<particles*3; i++) positions[i] = (Math.random() - 0.5) * 4;
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                const material = new THREE.PointsMaterial({ color: 0x00F3FF, size: 0.02, transparent: true, opacity: 0.6 });
+                const points = new THREE.Points(geometry, material);
+                scene.add(points);
+
+                // Core
+                const coreGeo = new THREE.IcosahedronGeometry(0.8, 1);
+                const coreMat = new THREE.MeshBasicMaterial({ color: 0x9D00FF, wireframe: true, transparent: true, opacity: 0.1 });
+                const core = new THREE.Mesh(coreGeo, coreMat);
+                scene.add(core);
+
+                camera.position.z = 2.5;
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    points.rotation.y += 0.001;
+                    core.rotation.x -= 0.002; core.rotation.y -= 0.002;
+                    renderer.render(scene, camera);
+                };
+                animate();
+                return () => mountRef.current && (mountRef.current.innerHTML = '');
+            }, []);
+            return <div ref={mountRef} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-50 mix-blend-screen" />;
+        };
+
+        // --- MAIN APP COMPONENT ---
+        const App = () => {
+            const [user, setUser] = useState(null);
+            const [view, setView] = useState('landing');
+            const [scanStatus, setScanStatus] = useState({ state: 'idle', log: [], progress: 0 });
+            const [report, setReport] = useState(null);
+            const [history, setHistory] = useState([]);
+            const [file, setFile] = useState(null);
+            const [showPricing, setShowPricing] = useState(false);
+            const [showHelp, setShowHelp] = useState(false);
+
+            // Load User & History
+            useEffect(() => {
+                const u = localStorage.getItem('mediaproof_user');
+                if (u) {
+                    const parsedUser = JSON.parse(u);
+                    // Check Daily Reset
+                    const lastLogin = new Date(parsedUser.lastLogin).toDateString();
+                    const today = new Date().toDateString();
+                    if (lastLogin !== today && parsedUser.plan.name === "Observer") {
+                        parsedUser.credits = 2; // Reset Free Credits
+                        parsedUser.lastLogin = new Date().toISOString();
+                        localStorage.setItem('mediaproof_user', JSON.stringify(parsedUser));
+                    }
+                    setUser(parsedUser);
+                }
+                const h = localStorage.getItem('mediaproof_history');
+                if (h) setHistory(JSON.parse(h));
+            }, []);
+
+            // Login Logic
+            const login = (email, name, pic, planKey = 'FREE') => {
+                const plan = PLANS[planKey];
+                const userData = { 
+                    email, name, pic, plan, 
+                    credits: plan.limit, 
+                    lastLogin: new Date().toISOString() 
+                };
+                setUser(userData);
+                localStorage.setItem('mediaproof_user', JSON.stringify(userData));
+                setView('dashboard');
+            };
+
+            // Google Auth Handler
+            const handleGoogleLogin = (res) => {
+                try {
+                    const payload = JSON.parse(atob(res.credential.split('.')[1]));
+                    login(payload.email, payload.name, payload.picture, 'FREE');
+                } catch (e) { console.error("Auth Error", e); }
+            };
+
+            // Scan Logic
+            const runScan = async (e) => {
+                const f = e.target.files[0];
+                if (!f) return;
+                
+                if (user.credits <= 0) {
+                    setShowPricing(true);
+                    return;
+                }
+
+                setFile(f);
+                setView('scanning');
+                setScanStatus({ state: 'processing', log: ['INITIALIZING FORENSIC KERNEL...'], progress: 10 });
+
+                try {
+                    // 1. LOCAL INTELLIGENCE
+                    setTimeout(() => setScanStatus(prev => ({ log: [...prev.log, "EXTRACTING METADATA..."], progress: 20 })), 500);
+                    let localTags = [];
+                    try {
+                        const exif = await exifr.parse(f);
+                        if (exif && /Midjourney|Stable Diffusion|DALL-E/.test(JSON.stringify(exif))) {
+                            localTags.push("Local Signature Found");
+                        }
+                    } catch(err) {}
+
+                    // 2. UPLOAD
+                    setTimeout(() => setScanStatus(prev => ({ log: [...prev.log, "ENCRYPTING & UPLOADING..."], progress: 40 })), 1000);
+                    const fd = new FormData();
+                    fd.append('file', f);
+                    fd.append('upload_preset', CONFIG.UPLOAD_PRESET);
+                    const upRes = await fetch(CONFIG.CLOUDINARY_URL, { method: 'POST', body: fd });
+                    const upData = await upRes.json();
+                    if (!upData.secure_url) throw new Error("Upload Failed");
+
+                    // 3. BACKEND ORCHESTRATION
+                    setTimeout(() => setScanStatus(prev => ({ log: [...prev.log, "ENGAGING NEURAL COUNCIL..."], progress: 60 })), 2000);
+                    
+                    const type = f.type.startsWith('image') ? 'image' : f.type.startsWith('audio') ? 'audio' : f.type.startsWith('video') ? 'video' : 'document';
+                    
+                    const orchRes = await fetch(CONFIG.ORCHESTRATOR_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ mediaUrl: upData.secure_url, type })
+                    });
+
+                    const data = await orchRes.json();
+
+                    // 4. CREDIT DEDUCTION & HISTORY
+                    const updatedUser = { ...user, credits: user.credits - 1 };
+                    setUser(updatedUser);
+                    localStorage.setItem('mediaproof_user', JSON.stringify(updatedUser));
+
+                    const newHistory = [{ id: data.id, date: new Date().toISOString(), score: data.risk.riskScore, type, name: f.name }, ...history];
+                    setHistory(newHistory);
+                    localStorage.setItem('mediaproof_history', JSON.stringify(newHistory));
+
+                    setReport(data);
+                    setScanStatus(prev => ({ log: [...prev.log, "ANALYSIS COMPLETE."], progress: 100 }));
+                    setTimeout(() => setView('results'), 800);
+
+                } catch (err) {
+                    alert("Scan Error: " + err.message);
+                    setView('dashboard');
+                }
+            };
+
+            // RENDER
+            return (
+                <div className="min-h-screen relative font-sans text-slate-200 selection:bg-neon-blue/30 flex">
+                    <div className="cyber-grid" />
+                    
+                    {/* SIDEBAR (Only visible when logged in) */}
+                    {user && (
+                        <div className="w-20 lg:w-64 border-r border-white/10 bg-bg-panel flex flex-col justify-between hidden md:flex z-50">
+                            <div>
+                                <div className="h-20 flex items-center justify-center lg:justify-start lg:px-6 border-b border-white/10 cursor-pointer" onClick={() => setView('dashboard')}>
+                                    <Shield className="text-neon-blue" size={28}/>
+                                    <span className="ml-3 font-bold text-xl tracking-tighter hidden lg:block">MediaProof</span>
+                                </div>
+                                <div className="p-4 space-y-2">
+                                    {[
+                                        { id: 'dashboard', icon: LayoutDashboard, label: 'Control Center' },
+                                        { id: 'history', icon: History, label: 'Case Files' },
+                                        { id: 'api', icon: Terminal, label: 'API Access', locked: user.plan.name !== 'God Mode' },
+                                        { id: 'settings', icon: Settings, label: 'Settings' }
+                                    ].map(item => (
+                                        <button key={item.id} onClick={() => !item.locked && setView(item.id)} 
+                                            className={`w-full flex items-center p-3 rounded-lg transition-all ${view === item.id ? 'bg-neon-blue/10 text-neon-blue' : 'hover:bg-white/5 text-slate-400'} ${item.locked ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                            <item.icon size={20} />
+                                            <span className="ml-3 hidden lg:block">{item.label}</span>
+                                            {item.locked && <Lock size={14} className="ml-auto hidden lg:block"/>}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="p-4 border-t border-white/10">
+                                <div className="bg-white/5 p-3 rounded-lg mb-4">
+                                    <div className="text-xs text-slate-500 uppercase font-bold mb-1">Credits</div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xl font-mono font-bold text-white">{user.credits}</span>
+                                        <Zap size={16} className="text-neon-warning"/>
+                                    </div>
+                                    <div className="w-full h-1 bg-black rounded-full mt-2 overflow-hidden">
+                                        <div className="h-full bg-neon-blue" style={{width: `${(user.credits / user.plan.limit) * 100}%`}}></div>
+                                    </div>
+                                </div>
+                                <button onClick={() => { setUser(null); setView('landing'); }} className="w-full flex items-center justify-center p-2 hover:text-neon-red transition-colors text-sm text-slate-500">
+                                    <LogOut size={16} className="mr-2"/> Sign Out
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* MAIN CONTENT AREA */}
+                    <div className="flex-1 flex flex-col h-screen overflow-y-auto overflow-x-hidden relative">
+                        
+                        {/* TOP MOBILE NAV */}
+                        <div className="h-16 border-b border-white/10 flex items-center justify-between px-6 md:hidden bg-bg-panel sticky top-0 z-40">
+                            <Shield className="text-neon-blue" size={24}/>
+                            <div className="flex items-center gap-4">
+                                {user && <span className="text-xs font-bold text-neon-blue">{user.credits} CR</span>}
+                                <button onClick={() => setShowHelp(true)}><HelpCircle size={20} className="text-slate-400"/></button>
+                            </div>
+                        </div>
+
+                        {/* VIEW: LANDING */}
+                        {view === 'landing' && (
+                            <div className="flex-1 flex flex-col relative overflow-hidden">
+                                <HeroGlobe />
+                                
+                                {/* HERO SECTION */}
+                                <div className="flex-1 flex flex-col items-center justify-center text-center px-4 z-10">
+                                    <div className="inline-block px-4 py-1 rounded-full border border-neon-blue/30 bg-neon-blue/5 text-neon-blue text-xs font-mono mb-6 tracking-widest">
+                                        ENTERPRISE FORENSIC SUITE v2.0
+                                    </div>
+                                    <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-600 leading-none">
+                                        TRUTH.<br/>VERIFIED.
+                                    </h1>
+                                    <p className="text-xl text-slate-400 mb-10 max-w-2xl font-light">
+                                        The world's most advanced AI detection engine. Combining neural networks, pixel physics, and metadata forensics to detect the undetectable.
+                                    </p>
+                                    <div className="flex flex-col md:flex-row gap-4">
+                                        <button onClick={() => setView('auth')} className="px-8 py-4 bg-neon-blue text-black font-bold text-lg rounded-none hover:scale-105 transition-transform shadow-[0_0_30px_rgba(0,243,255,0.3)]">
+                                            START FREE SCAN
+                                        </button>
+                                        <button onClick={() => setShowPricing(true)} className="px-8 py-4 border border-white/20 hover:bg-white/5 text-white font-bold text-lg rounded-none transition-colors">
+                                            VIEW PLANS
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* FEATURES SCROLL */}
+                                <div className="py-20 border-t border-white/10 bg-black/50 backdrop-blur-sm">
+                                    <div className="container mx-auto px-6 grid md:grid-cols-3 gap-8">
+                                        {[
+                                            { icon: Scan, title: "Deepfake Detection", desc: "Frame-by-frame analysis using ensemble neural networks." },
+                                            { icon: Fingerprint, title: "Physics Engine", desc: "Mathematical entropy analysis to catch invisible synthesis noise." },
+                                            { icon: Globe, title: "Origin Tracing", desc: "Reverse-search patient zero to find the original source." }
+                                        ].map((f, i) => (
+                                            <div key={i} className="glass-panel p-8 hover:-translate-y-2 transition-transform duration-300 group">
+                                                <f.icon className="text-slate-500 group-hover:text-neon-blue mb-4" size={32}/>
+                                                <h3 className="text-xl font-bold mb-2">{f.title}</h3>
+                                                <p className="text-sm text-slate-400 leading-relaxed">{f.desc}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* VIEW: AUTH */}
+                        {view === 'auth' && (
+                            <div className="flex-1 flex items-center justify-center p-4">
+                                <div className="glass-panel p-10 max-w-md w-full border-t-4 border-neon-blue">
+                                    <div className="text-center mb-8">
+                                        <Shield size={48} className="text-neon-blue mx-auto mb-4"/>
+                                        <h2 className="text-3xl font-bold">Identity Verification</h2>
+                                        <p className="text-slate-400 text-sm mt-2">Secure access required for forensic tools.</p>
+                                    </div>
+                                    
+                                    {/* Google Button Container */}
+                                    <div id="google-btn" className="w-full h-12 mb-6"></div>
+                                    <script>
+                                        // Delay render to ensure div exists
+                                        setTimeout(() => {
+                                            if(window.google) {
+                                                window.google.accounts.id.initialize({
+                                                    client_id: CONFIG.GOOGLE_CLIENT_ID,
+                                                    callback: (res) => {
+                                                        const payload = JSON.parse(atob(res.credential.split('.')[1]));
+                                                        // Call React login function (Need to expose it or handle differently in pure HTML/JS mix)
+                                                        // For this monolith, we simulate the click handling in the React Component above
+                                                    }
+                                                });
+                                                window.google.accounts.id.renderButton(
+                                                    document.getElementById("google-btn"),
+                                                    { theme: "filled_black", size: "large", width: "100%" }
+                                                );
+                                            }
+                                        }, 100);
+                                    </script>
+
+                                    {/* Mock Login for Demo (Since Google ID might be invalid in copy-paste) */}
+                                    <button onClick={() => login('demo@user.com', 'Demo Agent', '', 'FREE')} className="w-full py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded font-bold text-sm mb-4">
+                                        CONTINUE AS GUEST (DEMO)
+                                    </button>
+
+                                    <p className="text-center text-xs text-slate-600">By accessing, you agree to the forensic audit logs.</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* VIEW: DASHBOARD (UPLOAD) */}
+                        {view === 'dashboard' && (
+                            <div className="flex-1 p-8 flex flex-col items-center justify-center">
+                                <div className="text-center mb-12">
+                                    <h2 className="text-4xl font-bold mb-4">Upload Evidence</h2>
+                                    <p className="text-slate-400">Supported formats: JPG, PNG, MP4, MP3, PDF</p>
+                                </div>
+                                <label className="glass-panel w-full max-w-2xl h-80 border-2 border-dashed border-white/10 hover:border-neon-blue hover:bg-neon-blue/5 transition-all cursor-pointer flex flex-col items-center justify-center group relative overflow-hidden">
+                                    <div className="scan-line hidden group-hover:block" />
+                                    <Upload size={64} className="text-slate-600 group-hover:text-neon-blue mb-6 transition-colors"/>
+                                    <span className="text-xl font-bold group-hover:text-white transition-colors">DRAG & DROP FILE</span>
+                                    <span className="text-xs text-slate-500 mt-2 font-mono">OR CLICK TO BROWSE</span>
+                                    <input type="file" className="hidden" onChange={runScan} accept="image/*,video/*,audio/*,application/pdf" />
+                                </label>
+                                
+                                {/* AD BANNER FOR FREE USERS */}
+                                {user.plan.hasAds && (
+                                    <div className="mt-8 p-4 bg-white/5 border border-white/10 rounded w-full max-w-2xl text-center">
+                                        <span className="text-xs font-bold text-slate-500 bg-black px-2 py-1 rounded mr-2">AD</span>
+                                        <span className="text-sm text-slate-300">Upgrade to <strong>Analyst Plan</strong> to remove ads and unlock deep scanning.</span>
+                                        <button onClick={() => setShowPricing(true)} className="ml-4 text-xs text-neon-blue hover:underline">UPGRADE NOW</button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* VIEW: SCANNING */}
+                        {view === 'scanning' && (
+                            <div className="flex-1 flex flex-col items-center justify-center bg-black">
+                                <div className="w-64 h-64 relative flex items-center justify-center mb-10">
+                                    <div className="absolute inset-0 border-4 border-neon-blue/20 rounded-full animate-spin" />
+                                    <div className="absolute inset-0 border-t-4 border-neon-blue rounded-full animate-spin" />
+                                    <Fingerprint size={64} className="text-white animate-pulse"/>
+                                </div>
+                                <div className="font-mono text-neon-blue text-xl tracking-widest mb-4">ANALYSIS IN PROGRESS</div>
+                                <div className="w-full max-w-md h-2 bg-slate-800 rounded-full overflow-hidden">
+                                    <motion.div className="h-full bg-neon-blue" initial={{width: 0}} animate={{width: `${scanStatus.progress}%`}} />
+                                </div>
+                                <div className="mt-4 font-mono text-xs text-slate-500">
+                                    {scanStatus.log[scanStatus.log.length-1]}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* VIEW: RESULTS */}
+                        {view === 'results' && report && (
+                            <div className="flex-1 p-8 overflow-y-auto">
+                                <header className="flex justify-between items-center mb-10 border-b border-white/10 pb-6">
+                                    <div>
+                                        <div className="text-xs font-mono text-slate-500 tracking-widest mb-1">CASE ID</div>
+                                        <div className="text-xl font-mono text-white">{report.id.split('-')[0].toUpperCase()}</div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-xs font-mono text-slate-500 tracking-widest mb-1">RISK LEVEL</div>
+                                        <div className={`text-2xl font-bold ${report.risk.riskLevel === 'CRITICAL' ? 'text-neon-red' : 'text-neon-green'}`}>{report.risk.riskLevel}</div>
+                                    </div>
+                                </header>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                    {/* SCORE CARD */}
+                                    <div className="glass-panel p-8 border-t-4 border-neon-blue relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 p-6 opacity-10"><AlertTriangle size={120}/></div>
+                                        <div className="text-sm font-bold text-slate-400 mb-6 uppercase tracking-wider">Authenticity Score</div>
+                                        <div className={`text-9xl font-black ${report.risk.riskScore > 50 ? 'text-neon-red' : 'text-neon-green'}`}>
+                                            {100 - report.risk.riskScore}
+                                        </div>
+                                        <div className="mt-6 pt-6 border-t border-white/10">
+                                            <p className="text-lg leading-relaxed">{report.risk.executiveSummary}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* DETAILED BREAKDOWN */}
+                                    <div className="lg:col-span-2 space-y-6">
+                                        {/* FORENSIC PANEL */}
+                                        <div className="glass-panel p-6">
+                                            <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-neon-purple"><Scan size={20}/> Forensic Vector Analysis</h3>
+                                            <div className="grid md:grid-cols-2 gap-4 text-sm">
+                                                <div className="p-4 bg-white/5 rounded">
+                                                    <div className="text-xs text-slate-500 mb-1">AI PROBABILITY</div>
+                                                    <div className="text-xl font-bold">{(report.details?.forensic?.verdict?.aiProbability * 100 || 0).toFixed(1)}%</div>
+                                                </div>
+                                                <div className="p-4 bg-white/5 rounded">
+                                                    <div className="text-xs text-slate-500 mb-1">DETECTION METHOD</div>
+                                                    <div className="text-base font-mono text-neon-blue truncate">{report.details?.forensic?.verdict?.detection_method || "N/A"}</div>
+                                                </div>
+                                                <div className="p-4 bg-white/5 rounded">
+                                                    <div className="text-xs text-slate-500 mb-1">ENTROPY / PHYSICS</div>
+                                                    <div className="text-base font-mono">{report.details?.forensic?.details?.noiseAnalysis?.verdict || "N/A"}</div>
+                                                </div>
+                                                <div className="p-4 bg-white/5 rounded">
+                                                    <div className="text-xs text-slate-500 mb-1">METADATA STATUS</div>
+                                                    <div className="text-base font-mono">{report.details?.metadata?.deviceFingerprint?.make !== "Unknown" ? "HARDWARE VERIFIED" : "MISSING / STRIPPED"}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* OSINT PANEL */}
+                                        <div className="glass-panel p-6">
+                                            <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-neon-green"><Globe size={20}/> Web Origins (OSINT)</h3>
+                                            <div className="flex items-center justify-between p-4 bg-white/5 rounded mb-4">
+                                                <div>
+                                                    <div className="text-xs text-slate-500">PATIENT ZERO (FIRST SEEN)</div>
+                                                    <div className="text-lg font-bold truncate max-w-md">{report.details?.internet?.timelineIntel?.patientZero?.source || "None Found"}</div>
+                                                </div>
+                                                <a href={report.details?.internet?.timelineIntel?.patientZero?.url} target="_blank" className="text-neon-blue hover:underline text-xs">VIEW SOURCE</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* VIEW: HISTORY */}
+                        {view === 'history' && (
+                            <div className="flex-1 p-8">
+                                <h2 className="text-3xl font-bold mb-8">Case Files</h2>
+                                <div className="space-y-4">
+                                    {history.length === 0 ? <div className="text-slate-500">No cases found.</div> : 
+                                    history.map((h, i) => (
+                                        <div key={i} className="glass-panel p-4 flex items-center justify-between hover:border-neon-blue transition-colors cursor-pointer">
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-10 h-10 rounded flex items-center justify-center ${h.score > 50 ? 'bg-neon-red/20 text-neon-red' : 'bg-neon-green/20 text-neon-green'}`}>
+                                                    {h.score > 50 ? <AlertTriangle size={20}/> : <CheckCircle size={20}/>}
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold">{h.name}</div>
+                                                    <div className="text-xs text-slate-500 font-mono">{new Date(h.date).toLocaleDateString()} • {h.type.toUpperCase()}</div>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className={`font-bold ${h.score > 50 ? 'text-neon-red' : 'text-neon-green'}`}>{100 - h.score}% TRUST</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* VIEW: API PLAYGROUND */}
+                        {view === 'api' && (
+                            <div className="flex-1 p-8">
+                                <h2 className="text-3xl font-bold mb-8">Developer API</h2>
+                                <div className="glass-panel p-6 font-mono text-sm bg-black border-l-4 border-neon-purple">
+                                    <div className="text-slate-500 mb-2">// POST request to verify media</div>
+                                    <div className="text-neon-purple">curl -X POST https://api.mediaproof.com/v1/verify \</div>
+                                    <div className="text-neon-blue">  -H "Authorization: Bearer YOUR_API_KEY" \</div>
+                                    <div className="text-neon-blue">  -d '{"mediaUrl": "https://example.com/image.jpg"}'</div>
+                                </div>
+                                <button className="mt-6 px-6 py-3 bg-neon-purple text-white font-bold rounded hover:bg-purple-600 transition-colors">
+                                    GENERATE API KEY
+                                </button>
+                            </div>
+                        )}
+
+                    </div>
+
+                    {/* PRICING MODAL */}
+                    {showPricing && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl">
+                            <div className="w-full max-w-6xl h-[90vh] overflow-y-auto p-4 relative">
+                                <button onClick={() => setShowPricing(false)} className="absolute top-0 right-0 p-4 hover:text-white text-slate-500"><X size={32}/></button>
+                                <h2 className="text-4xl font-bold text-center mb-12">Upgrade Clearance Level</h2>
+                                <div className="grid md:grid-cols-4 gap-6">
+                                    {Object.values(PLANS).map((plan, i) => (
+                                        <div key={i} className={`glass-panel p-6 flex flex-col relative ${i === 2 ? 'border-neon-blue shadow-[0_0_30px_rgba(0,243,255,0.1)]' : ''}`}>
+                                            {i === 2 && <div className="absolute top-0 left-0 w-full bg-neon-blue text-black text-center text-xs font-bold py-1">MOST POPULAR</div>}
+                                            <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
+                                            <div className="text-3xl font-mono font-bold mb-6">{plan.price}<span className="text-sm text-slate-500 font-sans">/mo</span></div>
+                                            <ul className="space-y-3 mb-8 flex-1">
+                                                {plan.features.map((f, j) => (
+                                                    <li key={j} className="flex items-center gap-2 text-sm text-slate-300">
+                                                        <CheckCircle size={14} className="text-neon-green"/> {f.replace('_', ' ').toUpperCase()}
+                                                    </li>
+                                                ))}
+                                                <li className="flex items-center gap-2 text-sm text-slate-300">
+                                                    <Zap size={14} className="text-neon-warning"/> {plan.limit === 9999 ? 'UNLIMITED' : plan.limit} Verifications
+                                                </li>
+                                            </ul>
+                                            <a href={plan.price === 'Free' ? '#' : Object.values(CONFIG.PAYPAL)[i-1]} target="_blank" 
+                                                className={`w-full py-3 text-center font-bold text-sm rounded transition-all ${i===2 ? 'bg-neon-blue text-black hover:scale-105' : 'bg-white/10 hover:bg-white/20'}`}
+                                                onClick={() => plan.price === 'Free' && setShowPricing(false)}>
+                                                {plan.price === 'Free' ? 'CURRENT PLAN' : 'SUBSCRIBE'}
+                                            </a>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* HELP MODAL */}
+                    {showHelp && (
+                        <div className="fixed bottom-20 right-6 w-80 glass-panel p-4 border border-neon-blue/30 z-50">
+                            <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
+                                <span className="font-bold flex items-center gap-2"><MessageSquare size={16}/> Support Agent</span>
+                                <button onClick={() => setShowHelp(false)}><X size={14}/></button>
+                            </div>
+                            <div className="h-40 overflow-y-auto text-sm text-slate-400 mb-4">
+                                <div className="mb-2 bg-white/5 p-2 rounded">Hello! How can I assist with your investigation today?</div>
+                            </div>
+                            <input type="text" placeholder="Type query..." className="w-full bg-black/50 border border-white/10 rounded px-3 py-2 text-sm outline-none focus:border-neon-blue"/>
+                        </div>
+                    )}
+
+                </div>
+            );
+        };
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
