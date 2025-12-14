@@ -6,8 +6,8 @@
     <title>MediaProof | Enterprise</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -20,10 +20,28 @@
         .neon-text { text-shadow: 0 0 10px rgba(0, 243, 255, 0.4); }
         ::-webkit-scrollbar { width: 6px; background: #050505; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        
+        /* ERROR SCREEN STYLE */
+        #bsod { display: none; position: fixed; inset: 0; background: #0000AA; color: #fff; font-family: monospace; padding: 40px; z-index: 10000; font-size: 20px; }
     </style>
 </head>
 <body>
     <div id="root"></div>
+    <div id="bsod"></div>
+
+    <script>
+        window.onerror = function(msg, url, line, col, error) {
+            document.getElementById('bsod').style.display = 'block';
+            document.getElementById('bsod').innerHTML = `
+                <h1>SYSTEM HALTED</h1>
+                <p>A fatal exception has occurred.</p>
+                <p>Error: ${msg}</p>
+                <p>Line: ${line}</p>
+                <p>Please check your code copy-paste.</p>
+                <button onclick="location.reload()" style="background:white; color:blue; padding:10px; border:none; margin-top:20px; cursor:pointer;">RESTART SYSTEM</button>
+            `;
+        };
+    </script>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
@@ -51,12 +69,12 @@
             const [scanStatus, setScanStatus] = useState({ log: [], progress: 0 });
             const [report, setReport] = useState(null);
             const [showPricing, setShowPricing] = useState(false);
+            const [debugMode, setDebugMode] = useState(false); // NEW: Debug Toggle
 
-            // AUTO LOGIN (Demo)
             useEffect(() => {
                 const u = localStorage.getItem('mediaproof_user');
                 if (u) setUser(JSON.parse(u));
-                lucide.createIcons();
+                if (window.lucide) window.lucide.createIcons();
             }, []);
 
             const login = (tier) => {
@@ -81,12 +99,12 @@
                     fd.append('upload_preset', CONFIG.UPLOAD_PRESET);
                     
                     const upRes = await fetch(CONFIG.CLOUDINARY_URL, { method: 'POST', body: fd });
+                    if (!upRes.ok) throw new Error("Upload Failed");
                     const upData = await upRes.json();
                     
                     // 2. Scan
                     setScanStatus(prev => ({ log: [...prev.log, 'RUNNING HYBRID ANALYSIS...'], progress: 60 }));
                     
-                    // Force type detection
                     let type = 'document';
                     if (f.type.startsWith('image')) type = 'image';
                     else if (f.type.startsWith('audio')) type = 'audio';
@@ -98,7 +116,9 @@
                         body: JSON.stringify({ mediaUrl: upData.secure_url, type })
                     });
                     
+                    if (!orchRes.ok) throw new Error("Backend Connection Failed");
                     const data = await orchRes.json();
+                    
                     setReport(data);
                     setScanStatus(prev => ({ log: [...prev.log, 'COMPLETE.'], progress: 100 }));
                     
@@ -113,7 +133,7 @@
                 }
             };
 
-            // *** CRITICAL LOGIC FIX: HYBRID SCORING ***
+            // *** HYBRID SCORING ENGINE ***
             const getParsedResults = () => {
                 if (!report) return {};
                 const r = report;
@@ -124,39 +144,39 @@
                 let physics = "N/A";
                 let signature = "N/A";
 
-                if (r.media_type === 'audio') {
-                    mode = "AUDIO";
-                    const aud = r.details.audio || {};
-                    prob = (aud.voice_integrity?.cloning_probability * 100 || 0).toFixed(1);
-                    method = aud.voice_integrity?.method || "SIGNAL_PHYSICS";
-                    physics = aud.signal_analysis?.frequency_cutoff || "N/A";
-                } else if (r.media_type === 'video') {
-                    mode = "VIDEO";
-                    const vid = r.details.video || {};
-                    const img = r.details.forensic || {}; // Access frame analysis
+                try {
+                    if (r.media_type === 'audio') {
+                        mode = "AUDIO";
+                        const aud = r.details?.audio || {};
+                        prob = (aud.voice_integrity?.cloning_probability * 100 || 0).toFixed(1);
+                        method = aud.voice_integrity?.method || "SIGNAL_PHYSICS";
+                        physics = aud.signal_analysis?.frequency_cutoff || "N/A";
+                    } else if (r.media_type === 'video') {
+                        mode = "VIDEO";
+                        const vid = r.details?.video || {};
+                        const img = r.details?.forensic || {}; 
+                        
+                        // HYBRID: Max of Video Model OR Image Frame Model
+                        const vidScore = vid.verdict?.aiProbability || 0;
+                        const imgScore = img.verdict?.aiProbability || 0;
+                        
+                        prob = (Math.max(vidScore, imgScore) * 100).toFixed(1);
+                        method = vidScore > imgScore ? (vid.verdict?.method || "CONTAINER_PHYSICS") : "FRAME_ENTROPY_SCAN";
+                        physics = vid.temporal_analysis?.compression_lineage || "N/A";
+                        signature = vid.temporal_analysis?.sync_anomaly === "HIGH_JITTER" ? "JITTER_DETECTED" : "STABLE";
+                    } else {
+                        const img = r.details?.forensic || {};
+                        prob = (img.verdict?.aiProbability * 100 || 0).toFixed(1);
+                        method = img.verdict?.detection_method || "NEURAL_NET";
+                        physics = img.details?.noiseAnalysis?.verdict || "N/A";
+                        signature = r.details?.metadata?.deviceFingerprint?.make !== "Unknown" ? "HARDWARE_VERIFIED" : "STRIPPED";
+                    }
                     
-                    // HYBRID SCORE: If video service failed (0), use image frame score
-                    const vidScore = vid.verdict?.aiProbability || 0;
-                    const imgScore = img.verdict?.aiProbability || 0;
-                    
-                    // Take the HIGHER of the two scores
-                    prob = (Math.max(vidScore, imgScore) * 100).toFixed(1);
-                    
-                    // If we used the image score, label it "FRAME_ANALYSIS"
-                    method = vidScore > imgScore ? (vid.verdict?.method || "CONTAINER_PHYSICS") : "FRAME_ENTROPY_SCAN";
-                    
-                    physics = vid.temporal_analysis?.compression_lineage || "Software Encoded";
-                    signature = vid.temporal_analysis?.sync_anomaly === "HIGH_JITTER" ? "JITTER_DETECTED" : "STABLE";
-                } else {
-                    const img = r.details.forensic || {};
-                    prob = (img.verdict?.aiProbability * 100 || 0).toFixed(1);
-                    method = img.verdict?.detection_method || "NEURAL_NET";
-                    physics = img.details?.noiseAnalysis?.verdict || "N/A";
-                    signature = r.details.metadata?.deviceFingerprint?.make !== "Unknown" ? "HARDWARE_VERIFIED" : "STRIPPED";
+                    // Sanity check for failed models
+                    if (prob === "0.0" && signature.includes("Software")) prob = "65.0";
+                } catch (e) {
+                    console.error("Parsing Error", e);
                 }
-                
-                // Final Check: If probability is 0 but it's a software encode, bump it
-                if (prob === "0.0" && signature.includes("Software")) prob = "65.0";
 
                 return { mode, prob, method, physics, signature };
             };
@@ -164,7 +184,6 @@
             const parsed = getParsedResults();
             const osint = report?.details?.internet?.footprintAnalysis;
 
-            // RENDER
             return (
                 <div className="h-full flex flex-col relative">
                     {/* BACKGROUND */}
@@ -189,7 +208,6 @@
                     <main className="flex-1 overflow-y-auto relative">
                         <AnimatePresence mode="wait">
                             
-                            {/* LANDING */}
                             {view === 'landing' && (
                                 <motion.div key="landing" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="min-h-screen flex flex-col items-center justify-center relative p-6">
                                     <div className="text-center max-w-4xl z-10">
@@ -198,13 +216,11 @@
                                         <p className="text-xl text-slate-400 mb-10 max-w-2xl mx-auto">Analyze Deepfakes and AI Media with military-grade forensics.</p>
                                         <div className="flex gap-4 justify-center">
                                             <button onClick={() => setView('auth')} className="px-8 py-4 bg-cyan-400 text-black font-bold hover:scale-105 transition-transform shadow-[0_0_40px_rgba(6,182,212,0.4)]">START SCAN</button>
-                                            <button onClick={() => setShowPricing(true)} className="px-8 py-4 border border-white/20 hover:bg-white/10 font-bold">PLANS</button>
                                         </div>
                                     </div>
                                 </motion.div>
                             )}
 
-                            {/* AUTH */}
                             {view === 'auth' && (
                                 <motion.div key="auth" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="h-full flex items-center justify-center p-6">
                                     <div className="glass-panel p-10 max-w-md w-full border-t-4 border-cyan-400 text-center">
@@ -215,7 +231,6 @@
                                 </motion.div>
                             )}
 
-                            {/* DASHBOARD */}
                             {view === 'dashboard' && (
                                 <motion.div key="dashboard" initial={{opacity:0}} animate={{opacity:1}} className="h-full flex flex-col items-center justify-center p-6">
                                     <h2 className="text-4xl font-bold mb-4">Upload Evidence</h2>
@@ -228,7 +243,6 @@
                                 </motion.div>
                             )}
 
-                            {/* SCANNING */}
                             {view === 'scanning' && (
                                 <motion.div key="scanning" className="h-full flex flex-col items-center justify-center bg-black">
                                     <div className="w-64 h-64 relative flex items-center justify-center mb-10">
@@ -244,7 +258,6 @@
                                 </motion.div>
                             )}
 
-                            {/* RESULTS */}
                             {view === 'results' && report && (
                                 <motion.div key="results" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} className="p-6 md:p-12 pb-32">
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -302,7 +315,6 @@
                                                         <div className="text-xl font-mono font-bold text-white">{osint?.totalMatches || 0}</div>
                                                     </div>
                                                 </div>
-                                                
                                                 {osint?.matches?.length > 0 ? (
                                                     <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
                                                         {osint.matches.map((m, i) => (
@@ -316,29 +328,21 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <button onClick={() => setView('dashboard')} className="mt-8 px-6 py-3 bg-white/10 hover:bg-white/20 rounded font-bold text-sm">START NEW SCAN</button>
+                                    <div className="mt-8 flex gap-4">
+                                        <button onClick={() => setView('dashboard')} className="px-6 py-3 bg-white/10 hover:bg-white/20 rounded font-bold text-sm">START NEW SCAN</button>
+                                        <button onClick={() => setDebugMode(!debugMode)} className="px-6 py-3 border border-white/10 hover:text-red-500 rounded font-bold text-sm">DEBUG</button>
+                                    </div>
+                                    
+                                    {/* DEBUG PANEL */}
+                                    {debugMode && (
+                                        <div className="mt-8 p-6 bg-black border border-red-500 font-mono text-xs text-green-400 overflow-auto max-h-96">
+                                            <pre>{JSON.stringify(report, null, 2)}</pre>
+                                        </div>
+                                    )}
                                 </motion.div>
                             )}
                         </AnimatePresence>
                     </main>
-
-                    {showPricing && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl">
-                            <div className="w-full max-w-4xl relative p-8 glass-panel">
-                                <button onClick={() => setShowPricing(false)} className="absolute top-4 right-4 text-white hover:text-cyan-400"><i data-lucide="x"></i></button>
-                                <h2 className="text-3xl font-bold text-center mb-8">Clearance Levels</h2>
-                                <div className="grid md:grid-cols-2 gap-6">
-                                    {Object.values(PLANS).map((plan, i) => (
-                                        <div key={i} className="p-6 border border-white/10 rounded flex flex-col items-center text-center hover:border-cyan-400 transition-colors">
-                                            <h3 className={`text-xl font-bold mb-2 ${plan.color}`}>{plan.name}</h3>
-                                            <div className="text-3xl font-mono font-bold mb-4">{plan.price}</div>
-                                            <button className="px-6 py-2 bg-white/10 rounded font-bold text-sm hover:bg-white/20">SELECT</button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </div>
             );
         };
