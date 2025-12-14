@@ -95,10 +95,19 @@
                     // 2. Scan
                     setScanStatus(prev => ({ log: [...prev.log, 'RUNNING HYBRID ANALYSIS...'], progress: 60 }));
                     
-                    let type = 'document';
-                    if (f.type.startsWith('image')) type = 'image';
-                    else if (f.type.startsWith('audio')) type = 'audio';
-                    else if (f.type.startsWith('video')) type = 'video';
+                    // *** FIX: ROBUST FILE TYPE DETECTION ***
+                    // Previous logic defaulted to 'document', causing video crashes.
+                    // New logic checks extensions if MIME type is generic.
+                    const ext = f.name.split('.').pop().toLowerCase();
+                    let type = 'document'; 
+                    
+                    if (f.type.startsWith('image') || ['jpg','jpeg','png','webp','heic'].includes(ext)) {
+                        type = 'image';
+                    } else if (f.type.startsWith('audio') || ['mp3','wav','ogg','m4a'].includes(ext)) {
+                        type = 'audio';
+                    } else if (f.type.startsWith('video') || ['mp4','mov','avi','mkv','webm'].includes(ext)) {
+                        type = 'video';
+                    }
 
                     const orchRes = await fetch(CONFIG.ORCHESTRATOR_URL, {
                         method: 'POST',
@@ -123,7 +132,7 @@
                 }
             };
 
-            // *** TRI-STATE LOGIC (Safe / Fake / Error) ***
+            // *** PARSING LOGIC ***
             const getParsedResults = () => {
                 if (!report) return {};
                 const r = report;
@@ -137,16 +146,19 @@
 
                 try {
                     // 1. CRASH DETECTION (Yellow State)
-                    // If a critical service returns an error object instead of data
                     if (r.details?.document?.error || r.details?.forensic?.error || r.details?.video?.error) {
-                         return {
-                            mode: "SYSTEM_ALERT",
-                            prob: "N/A", // Do NOT give a score
-                            method: "SERVICE_TIMEOUT",
-                            physics: "UNVERIFIED",
-                            signature: "UNKNOWN",
-                            isError: true
-                         };
+                         // Only show error if NO other useful data was found
+                         // (e.g. sometimes video fails but image frames work)
+                         if (r.risk?.riskScore === 0 && r.risk?.riskLevel === "VERIFIED") {
+                             return {
+                                mode: "SYSTEM_ALERT",
+                                prob: "N/A",
+                                method: "SERVICE_TIMEOUT",
+                                physics: "UNVERIFIED",
+                                signature: "UNKNOWN",
+                                isError: true
+                             };
+                         }
                     }
 
                     // 2. NORMAL PARSING
@@ -161,7 +173,6 @@
                         const vid = r.details?.video || {};
                         const img = r.details?.forensic || {}; 
                         
-                        // HYBRID: Max of Video Model OR Image Frame Model
                         const vidScore = vid.verdict?.aiProbability || 0;
                         const imgScore = img.verdict?.aiProbability || 0;
                         
@@ -181,7 +192,6 @@
                         signature = r.details?.metadata?.deviceFingerprint?.make !== "Unknown" ? "HARDWARE_VERIFIED" : "STRIPPED";
                     }
                     
-                    // Sanity check
                     if (prob === "0.0" && signature.includes("Software")) prob = "65.0";
 
                 } catch (e) { console.error(e); isError = true; }
@@ -193,9 +203,6 @@
             const osint = report?.details?.internet?.footprintAnalysis;
 
             // DISPLAY LOGIC
-            // If Error -> Show "?", Yellow Color, "Inconclusive"
-            // If Data -> Show Score, Red/Green Color
-            
             const displayScore = parsed.isError ? "?" : Math.max(0, 100 - parseFloat(parsed.prob)).toFixed(0);
             
             let riskLabel = "VERIFIED SAFE";
@@ -214,7 +221,6 @@
 
             return (
                 <div className="h-full flex flex-col relative">
-                    {/* BACKGROUND */}
                     <div className="fixed inset-0 z-0 opacity-20 pointer-events-none" 
                         style={{
                             backgroundImage: 'linear-gradient(rgba(0, 243, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 243, 255, 0.1) 1px, transparent 1px)',
@@ -223,7 +229,6 @@
                         }} 
                     />
 
-                    {/* NAVBAR */}
                     <nav className="h-16 border-b border-white/10 bg-black/80 flex items-center justify-between px-6 sticky top-0 z-50 backdrop-blur-md">
                         <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('landing')}>
                             <i data-lucide="shield" className="text-cyan-400"></i>
@@ -232,11 +237,9 @@
                         {user && <div className="text-xs font-mono text-cyan-400 border border-cyan-400/30 px-3 py-1 rounded bg-cyan-400/10">{user.credits} CR</div>}
                     </nav>
 
-                    {/* CONTENT */}
                     <main className="flex-1 overflow-y-auto relative">
                         <AnimatePresence mode="wait">
                             
-                            {/* LANDING */}
                             {view === 'landing' && (
                                 <motion.div key="landing" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="min-h-screen flex flex-col items-center justify-center relative p-6">
                                     <div className="text-center max-w-4xl z-10">
@@ -250,7 +253,6 @@
                                 </motion.div>
                             )}
 
-                            {/* AUTH */}
                             {view === 'auth' && (
                                 <motion.div key="auth" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="h-full flex items-center justify-center p-6">
                                     <div className="glass-panel p-10 max-w-md w-full border-t-4 border-cyan-400 text-center">
@@ -261,7 +263,6 @@
                                 </motion.div>
                             )}
 
-                            {/* DASHBOARD */}
                             {view === 'dashboard' && (
                                 <motion.div key="dashboard" initial={{opacity:0}} animate={{opacity:1}} className="h-full flex flex-col items-center justify-center p-6">
                                     <h2 className="text-4xl font-bold mb-4">Upload Evidence</h2>
@@ -274,7 +275,6 @@
                                 </motion.div>
                             )}
 
-                            {/* SCANNING */}
                             {view === 'scanning' && (
                                 <motion.div key="scanning" className="h-full flex flex-col items-center justify-center bg-black">
                                     <div className="w-64 h-64 relative flex items-center justify-center mb-10">
@@ -290,7 +290,6 @@
                                 </motion.div>
                             )}
 
-                            {/* RESULTS */}
                             {view === 'results' && report && (
                                 <motion.div key="results" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} className="p-6 md:p-12 pb-32">
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -308,7 +307,7 @@
                                             </div>
                                             <div className="pt-6 border-t border-white/10">
                                                 <p className="text-sm leading-relaxed text-slate-300">
-                                                    {parsed.isError ? "Scan was inconclusive. The forensic service did not return a valid fingerprint. Please retry." : (report.risk?.executiveSummary || "Analysis complete.")}
+                                                    {parsed.isError ? "Unable to verify file integrity. Core forensic services crashed or the file type is obfuscated." : (report.risk?.executiveSummary || "Analysis complete.")}
                                                 </p>
                                             </div>
                                         </div>
@@ -352,7 +351,6 @@
                                                         <div className="text-xl font-mono font-bold text-white">{osint?.totalMatches || 0}</div>
                                                     </div>
                                                 </div>
-                                                
                                                 {osint?.matches?.length > 0 ? (
                                                     <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
                                                         {osint.matches.map((m, i) => (
@@ -371,7 +369,6 @@
                                         <button onClick={() => setDebugMode(!debugMode)} className="px-6 py-3 border border-white/10 hover:text-red-500 rounded font-bold text-sm">DEBUG</button>
                                     </div>
                                     
-                                    {/* DEBUG PANEL */}
                                     {debugMode && (
                                         <div className="mt-8 p-6 bg-black border border-red-500 font-mono text-xs text-green-400 overflow-auto max-h-96">
                                             <pre>{JSON.stringify(report, null, 2)}</pre>
