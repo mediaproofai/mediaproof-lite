@@ -20,8 +20,6 @@
         .neon-text { text-shadow: 0 0 10px rgba(0, 243, 255, 0.4); }
         ::-webkit-scrollbar { width: 6px; background: #050505; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-        
-        /* ERROR SCREEN STYLE */
         #bsod { display: none; position: fixed; inset: 0; background: #0000AA; color: #fff; font-family: monospace; padding: 40px; z-index: 10000; font-size: 20px; }
     </style>
 </head>
@@ -32,14 +30,7 @@
     <script>
         window.onerror = function(msg, url, line, col, error) {
             document.getElementById('bsod').style.display = 'block';
-            document.getElementById('bsod').innerHTML = `
-                <h1>SYSTEM HALTED</h1>
-                <p>A fatal exception has occurred.</p>
-                <p>Error: ${msg}</p>
-                <p>Line: ${line}</p>
-                <p>Please check your code copy-paste.</p>
-                <button onclick="location.reload()" style="background:white; color:blue; padding:10px; border:none; margin-top:20px; cursor:pointer;">RESTART SYSTEM</button>
-            `;
+            document.getElementById('bsod').innerHTML = `<h1>SYSTEM HALTED</h1><p>Error: ${msg}</p><button onclick="location.reload()" style="background:white; color:blue; padding:10px; border:none; margin-top:20px; cursor:pointer;">RESTART SYSTEM</button>`;
         };
     </script>
 
@@ -69,7 +60,7 @@
             const [scanStatus, setScanStatus] = useState({ log: [], progress: 0 });
             const [report, setReport] = useState(null);
             const [showPricing, setShowPricing] = useState(false);
-            const [debugMode, setDebugMode] = useState(false); // NEW: Debug Toggle
+            const [debugMode, setDebugMode] = useState(false);
 
             useEffect(() => {
                 const u = localStorage.getItem('mediaproof_user');
@@ -133,7 +124,7 @@
                 }
             };
 
-            // *** HYBRID SCORING ENGINE ***
+            // *** CRITICAL PATCH: CRASH DETECTOR ***
             const getParsedResults = () => {
                 if (!report) return {};
                 const r = report;
@@ -143,8 +134,22 @@
                 let method = "N/A";
                 let physics = "N/A";
                 let signature = "N/A";
+                let isError = false;
 
                 try {
+                    // 1. DETECT SERVICE CRASHES (The "Fail Open" Fix)
+                    if (r.details?.document?.error || r.details?.forensic?.error || r.details?.video?.error) {
+                         return {
+                            mode: "SYSTEM_ALERT",
+                            prob: "100.0", // Force Max Risk
+                            method: "SERVICE_FAILURE",
+                            physics: "UNSUPPORTED_FILE",
+                            signature: "POTENTIAL_OBFUSCATION",
+                            isError: true
+                         };
+                    }
+
+                    // 2. NORMAL PARSING
                     if (r.media_type === 'audio') {
                         mode = "AUDIO";
                         const aud = r.details?.audio || {};
@@ -156,7 +161,6 @@
                         const vid = r.details?.video || {};
                         const img = r.details?.forensic || {}; 
                         
-                        // HYBRID: Max of Video Model OR Image Frame Model
                         const vidScore = vid.verdict?.aiProbability || 0;
                         const imgScore = img.verdict?.aiProbability || 0;
                         
@@ -164,6 +168,11 @@
                         method = vidScore > imgScore ? (vid.verdict?.method || "CONTAINER_PHYSICS") : "FRAME_ENTROPY_SCAN";
                         physics = vid.temporal_analysis?.compression_lineage || "N/A";
                         signature = vid.temporal_analysis?.sync_anomaly === "HIGH_JITTER" ? "JITTER_DETECTED" : "STABLE";
+                    } else if (r.media_type === 'document') {
+                        // Document logic (if not crashed)
+                        mode = "DOCUMENT";
+                        prob = "0.0"; // Placeholder if successful
+                        method = "METADATA_SCAN";
                     } else {
                         const img = r.details?.forensic || {};
                         prob = (img.verdict?.aiProbability * 100 || 0).toFixed(1);
@@ -172,17 +181,20 @@
                         signature = r.details?.metadata?.deviceFingerprint?.make !== "Unknown" ? "HARDWARE_VERIFIED" : "STRIPPED";
                     }
                     
-                    // Sanity check for failed models
+                    // Sanity check
                     if (prob === "0.0" && signature.includes("Software")) prob = "65.0";
-                } catch (e) {
-                    console.error("Parsing Error", e);
-                }
 
-                return { mode, prob, method, physics, signature };
+                } catch (e) { console.error(e); }
+
+                return { mode, prob, method, physics, signature, isError };
             };
 
             const parsed = getParsedResults();
             const osint = report?.details?.internet?.footprintAnalysis;
+
+            // Determine final Authenticity Score (Override if error)
+            const finalScore = parsed.isError ? 0 : Math.max(0, 100 - parseFloat(parsed.prob));
+            const riskLabel = parsed.isError ? "SYSTEM FAILURE" : (parseFloat(parsed.prob) > 50 ? "CRITICAL RISK" : "VERIFIED SAFE");
 
             return (
                 <div className="h-full flex flex-col relative">
@@ -208,6 +220,7 @@
                     <main className="flex-1 overflow-y-auto relative">
                         <AnimatePresence mode="wait">
                             
+                            {/* LANDING */}
                             {view === 'landing' && (
                                 <motion.div key="landing" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="min-h-screen flex flex-col items-center justify-center relative p-6">
                                     <div className="text-center max-w-4xl z-10">
@@ -216,11 +229,13 @@
                                         <p className="text-xl text-slate-400 mb-10 max-w-2xl mx-auto">Analyze Deepfakes and AI Media with military-grade forensics.</p>
                                         <div className="flex gap-4 justify-center">
                                             <button onClick={() => setView('auth')} className="px-8 py-4 bg-cyan-400 text-black font-bold hover:scale-105 transition-transform shadow-[0_0_40px_rgba(6,182,212,0.4)]">START SCAN</button>
+                                            <button onClick={() => setShowPricing(true)} className="px-8 py-4 border border-white/20 hover:bg-white/10 font-bold">PLANS</button>
                                         </div>
                                     </div>
                                 </motion.div>
                             )}
 
+                            {/* AUTH */}
                             {view === 'auth' && (
                                 <motion.div key="auth" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="h-full flex items-center justify-center p-6">
                                     <div className="glass-panel p-10 max-w-md w-full border-t-4 border-cyan-400 text-center">
@@ -231,6 +246,7 @@
                                 </motion.div>
                             )}
 
+                            {/* DASHBOARD */}
                             {view === 'dashboard' && (
                                 <motion.div key="dashboard" initial={{opacity:0}} animate={{opacity:1}} className="h-full flex flex-col items-center justify-center p-6">
                                     <h2 className="text-4xl font-bold mb-4">Upload Evidence</h2>
@@ -243,6 +259,7 @@
                                 </motion.div>
                             )}
 
+                            {/* SCANNING */}
                             {view === 'scanning' && (
                                 <motion.div key="scanning" className="h-full flex flex-col items-center justify-center bg-black">
                                     <div className="w-64 h-64 relative flex items-center justify-center mb-10">
@@ -258,6 +275,7 @@
                                 </motion.div>
                             )}
 
+                            {/* RESULTS */}
                             {view === 'results' && report && (
                                 <motion.div key="results" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} className="p-6 md:p-12 pb-32">
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -266,14 +284,18 @@
                                         <div className="glass-panel p-8 border-t-4 border-cyan-400 relative overflow-hidden flex flex-col justify-between h-96">
                                             <div>
                                                 <div className="text-sm font-bold text-slate-400 mb-2 uppercase tracking-wider">Authenticity Score</div>
-                                                <div className={`text-9xl font-black tracking-tighter ${parsed.prob > 50 ? 'text-red-500 neon-text' : 'text-green-400 neon-text'}`}>
-                                                    {Math.max(0, 100 - parseFloat(parsed.prob)).toFixed(0)}
+                                                <div className={`text-9xl font-black tracking-tighter ${finalScore < 50 ? 'text-red-500 neon-text' : 'text-green-400 neon-text'}`}>
+                                                    {finalScore.toFixed(0)}
                                                 </div>
-                                                <div className={`inline-block px-3 py-1 rounded text-xs font-bold mt-2 ${parsed.prob > 50 ? 'bg-red-900/30 text-red-400' : 'bg-green-900/30 text-green-400'}`}>
-                                                    {parsed.prob > 50 ? "CRITICAL RISK" : "VERIFIED SAFE"}
+                                                <div className={`inline-block px-3 py-1 rounded text-xs font-bold mt-2 ${finalScore < 50 ? 'bg-red-900/30 text-red-400' : 'bg-green-900/30 text-green-400'}`}>
+                                                    {riskLabel}
                                                 </div>
                                             </div>
-                                            <div className="pt-6 border-t border-white/10"><p className="text-sm leading-relaxed text-slate-300">{report.risk?.executiveSummary || "Analysis complete."}</p></div>
+                                            <div className="pt-6 border-t border-white/10">
+                                                <p className="text-sm leading-relaxed text-slate-300">
+                                                    {parsed.isError ? "Unable to verify file integrity. Core forensic services crashed or the file type is obfuscated." : (report.risk?.executiveSummary || "Analysis complete.")}
+                                                </p>
+                                            </div>
                                         </div>
 
                                         {/* METRICS */}
@@ -315,6 +337,7 @@
                                                         <div className="text-xl font-mono font-bold text-white">{osint?.totalMatches || 0}</div>
                                                     </div>
                                                 </div>
+                                                
                                                 {osint?.matches?.length > 0 ? (
                                                     <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
                                                         {osint.matches.map((m, i) => (
@@ -343,6 +366,24 @@
                             )}
                         </AnimatePresence>
                     </main>
+
+                    {showPricing && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl">
+                            <div className="w-full max-w-4xl relative p-8 glass-panel">
+                                <button onClick={() => setShowPricing(false)} className="absolute top-4 right-4 text-white hover:text-cyan-400"><i data-lucide="x"></i></button>
+                                <h2 className="text-3xl font-bold text-center mb-8">Clearance Levels</h2>
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    {Object.values(PLANS).map((plan, i) => (
+                                        <div key={i} className="p-6 border border-white/10 rounded flex flex-col items-center text-center hover:border-cyan-400 transition-colors">
+                                            <h3 className={`text-xl font-bold mb-2 ${plan.color}`}>{plan.name}</h3>
+                                            <div className="text-3xl font-mono font-bold mb-4">{plan.price}</div>
+                                            <button className="px-6 py-2 bg-white/10 rounded font-bold text-sm hover:bg-white/20">SELECT</button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         };
