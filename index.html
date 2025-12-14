@@ -44,7 +44,6 @@
         const CONFIG = {
             CLOUDINARY_URL: "https://api.cloudinary.com/v1_1/dphicbaf2/auto/upload",
             UPLOAD_PRESET: "yhqlojie",
-            // YOUR CLOUDFLARE WORKER URL
             ORCHESTRATOR_URL: "https://mediaproofai.mediaproofai.workers.dev/",
             GOOGLE_CLIENT_ID: "YOUR_GOOGLE_ID"
         };
@@ -124,7 +123,7 @@
                 }
             };
 
-            // *** CRITICAL PATCH: CRASH DETECTOR ***
+            // *** TRI-STATE LOGIC (Safe / Fake / Error) ***
             const getParsedResults = () => {
                 if (!report) return {};
                 const r = report;
@@ -137,14 +136,15 @@
                 let isError = false;
 
                 try {
-                    // 1. DETECT SERVICE CRASHES (The "Fail Open" Fix)
+                    // 1. CRASH DETECTION (Yellow State)
+                    // If a critical service returns an error object instead of data
                     if (r.details?.document?.error || r.details?.forensic?.error || r.details?.video?.error) {
                          return {
                             mode: "SYSTEM_ALERT",
-                            prob: "100.0", // Force Max Risk
-                            method: "SERVICE_FAILURE",
-                            physics: "UNSUPPORTED_FILE",
-                            signature: "POTENTIAL_OBFUSCATION",
+                            prob: "N/A", // Do NOT give a score
+                            method: "SERVICE_TIMEOUT",
+                            physics: "UNVERIFIED",
+                            signature: "UNKNOWN",
                             isError: true
                          };
                     }
@@ -161,6 +161,7 @@
                         const vid = r.details?.video || {};
                         const img = r.details?.forensic || {}; 
                         
+                        // HYBRID: Max of Video Model OR Image Frame Model
                         const vidScore = vid.verdict?.aiProbability || 0;
                         const imgScore = img.verdict?.aiProbability || 0;
                         
@@ -169,9 +170,8 @@
                         physics = vid.temporal_analysis?.compression_lineage || "N/A";
                         signature = vid.temporal_analysis?.sync_anomaly === "HIGH_JITTER" ? "JITTER_DETECTED" : "STABLE";
                     } else if (r.media_type === 'document') {
-                        // Document logic (if not crashed)
                         mode = "DOCUMENT";
-                        prob = "0.0"; // Placeholder if successful
+                        prob = "0.0"; 
                         method = "METADATA_SCAN";
                     } else {
                         const img = r.details?.forensic || {};
@@ -184,7 +184,7 @@
                     // Sanity check
                     if (prob === "0.0" && signature.includes("Software")) prob = "65.0";
 
-                } catch (e) { console.error(e); }
+                } catch (e) { console.error(e); isError = true; }
 
                 return { mode, prob, method, physics, signature, isError };
             };
@@ -192,9 +192,25 @@
             const parsed = getParsedResults();
             const osint = report?.details?.internet?.footprintAnalysis;
 
-            // Determine final Authenticity Score (Override if error)
-            const finalScore = parsed.isError ? 0 : Math.max(0, 100 - parseFloat(parsed.prob));
-            const riskLabel = parsed.isError ? "SYSTEM FAILURE" : (parseFloat(parsed.prob) > 50 ? "CRITICAL RISK" : "VERIFIED SAFE");
+            // DISPLAY LOGIC
+            // If Error -> Show "?", Yellow Color, "Inconclusive"
+            // If Data -> Show Score, Red/Green Color
+            
+            const displayScore = parsed.isError ? "?" : Math.max(0, 100 - parseFloat(parsed.prob)).toFixed(0);
+            
+            let riskLabel = "VERIFIED SAFE";
+            let colorClass = "text-green-400 neon-text";
+            let badgeClass = "bg-green-900/30 text-green-400";
+            
+            if (parsed.isError) {
+                riskLabel = "INCONCLUSIVE";
+                colorClass = "text-yellow-400";
+                badgeClass = "bg-yellow-900/30 text-yellow-400";
+            } else if (parseFloat(parsed.prob) > 50) {
+                riskLabel = "CRITICAL RISK";
+                colorClass = "text-red-500 neon-text";
+                badgeClass = "bg-red-900/30 text-red-400";
+            }
 
             return (
                 <div className="h-full flex flex-col relative">
@@ -229,7 +245,6 @@
                                         <p className="text-xl text-slate-400 mb-10 max-w-2xl mx-auto">Analyze Deepfakes and AI Media with military-grade forensics.</p>
                                         <div className="flex gap-4 justify-center">
                                             <button onClick={() => setView('auth')} className="px-8 py-4 bg-cyan-400 text-black font-bold hover:scale-105 transition-transform shadow-[0_0_40px_rgba(6,182,212,0.4)]">START SCAN</button>
-                                            <button onClick={() => setShowPricing(true)} className="px-8 py-4 border border-white/20 hover:bg-white/10 font-bold">PLANS</button>
                                         </div>
                                     </div>
                                 </motion.div>
@@ -284,16 +299,16 @@
                                         <div className="glass-panel p-8 border-t-4 border-cyan-400 relative overflow-hidden flex flex-col justify-between h-96">
                                             <div>
                                                 <div className="text-sm font-bold text-slate-400 mb-2 uppercase tracking-wider">Authenticity Score</div>
-                                                <div className={`text-9xl font-black tracking-tighter ${finalScore < 50 ? 'text-red-500 neon-text' : 'text-green-400 neon-text'}`}>
-                                                    {finalScore.toFixed(0)}
+                                                <div className={`text-9xl font-black tracking-tighter ${colorClass}`}>
+                                                    {displayScore}
                                                 </div>
-                                                <div className={`inline-block px-3 py-1 rounded text-xs font-bold mt-2 ${finalScore < 50 ? 'bg-red-900/30 text-red-400' : 'bg-green-900/30 text-green-400'}`}>
+                                                <div className={`inline-block px-3 py-1 rounded text-xs font-bold mt-2 ${badgeClass}`}>
                                                     {riskLabel}
                                                 </div>
                                             </div>
                                             <div className="pt-6 border-t border-white/10">
                                                 <p className="text-sm leading-relaxed text-slate-300">
-                                                    {parsed.isError ? "Unable to verify file integrity. Core forensic services crashed or the file type is obfuscated." : (report.risk?.executiveSummary || "Analysis complete.")}
+                                                    {parsed.isError ? "Scan was inconclusive. The forensic service did not return a valid fingerprint. Please retry." : (report.risk?.executiveSummary || "Analysis complete.")}
                                                 </p>
                                             </div>
                                         </div>
@@ -308,7 +323,7 @@
                                                 <div className="grid md:grid-cols-2 gap-4">
                                                     <div className="p-4 bg-cyan-400/5 border border-cyan-400/30 rounded">
                                                         <div className="text-[10px] font-bold text-slate-500 mb-1">PROBABILITY</div>
-                                                        <div className="text-xl font-mono font-bold text-cyan-400">{parsed.prob}%</div>
+                                                        <div className="text-xl font-mono font-bold text-cyan-400">{parsed.prob === "N/A" ? "--" : parsed.prob + "%"}</div>
                                                     </div>
                                                     <div className="p-4 bg-white/5 border border-white/10 rounded">
                                                         <div className="text-[10px] font-bold text-slate-500 mb-1">METHOD</div>
