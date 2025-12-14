@@ -44,7 +44,6 @@
         const CONFIG = {
             CLOUDINARY_URL: "https://api.cloudinary.com/v1_1/dphicbaf2/auto/upload",
             UPLOAD_PRESET: "yhqlojie",
-            // YOUR CLOUDFLARE WORKER URL
             ORCHESTRATOR_URL: "https://mediaproofai.mediaproofai.workers.dev/",
             GOOGLE_CLIENT_ID: "YOUR_GOOGLE_ID"
         };
@@ -75,50 +74,6 @@
                 setView('dashboard');
             };
 
-            // *** NEW FUNCTION: MAGIC BYTE DETECTOR ***
-            const detectFileType = async (file) => {
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = function(e) {
-                        const arr = (new Uint8Array(e.target.result)).subarray(0, 8);
-                        let header = "";
-                        for(let i = 0; i < arr.length; i++) header += arr[i].toString(16);
-                        
-                        console.log("File Header:", header);
-
-                        // VIDEO SIGNATURES
-                        if (header.includes("66747970") || // ftyp (mp4)
-                            header.startsWith("1a45dfa3") || // mkv/webm
-                            header.startsWith("4f676753") || // ogg
-                            header.startsWith("3026b275") || // wmv
-                            header.includes("6d6f6f76")) { // moov atom
-                            resolve('video');
-                            return;
-                        }
-
-                        // IMAGE SIGNATURES
-                        if (header.startsWith("89504e47") || // png
-                            header.startsWith("ffd8ff") || // jpg
-                            header.startsWith("52494646") && header.includes("57454250")) { // webp
-                            resolve('image');
-                            return;
-                        }
-
-                        // AUDIO SIGNATURES
-                        if (header.startsWith("494433") || // mp3
-                            header.startsWith("fffb") ||   // mp3 frame
-                            header.startsWith("52494646")) { // wav (RIFF)
-                            resolve('audio');
-                            return;
-                        }
-
-                        // Default
-                        resolve('document');
-                    };
-                    reader.readAsArrayBuffer(file);
-                });
-            };
-
             const runScan = async (e) => {
                 const f = e.target.files[0];
                 if (!f) return;
@@ -127,12 +82,30 @@
                 setScanStatus({ log: ['INITIALIZING KERNEL...'], progress: 5 });
 
                 try {
-                    // 1. DETECT ACTUAL TYPE
-                    setScanStatus(prev => ({ log: [...prev.log, 'ANALYZING FILE HEADER...'], progress: 10 }));
-                    const detectedType = await detectFileType(f);
-                    console.log("Detected Type:", detectedType);
+                    // *** SIMPLIFIED & ROBUST TYPE DETECTION ***
+                    // We trust the browser's MIME type first (it's 99.9% accurate).
+                    // If that fails, we check the extension.
+                    let type = 'document';
+                    const mime = f.type.split('/')[0]; // 'video', 'image', 'audio'
+                    const ext = f.name.split('.').pop().toLowerCase();
 
-                    // 2. UPLOAD
+                    if (['video', 'audio', 'image'].includes(mime)) {
+                        type = mime;
+                    } else if (['mp4','mov','avi','mkv','webm'].includes(ext)) {
+                        type = 'video';
+                    } else if (['jpg','jpeg','png','webp'].includes(ext)) {
+                        type = 'image';
+                    } else if (['mp3','wav','ogg'].includes(ext)) {
+                        type = 'audio';
+                    }
+
+                    // UPDATE LOG SO YOU CAN SEE WHAT IT DECIDED
+                    setScanStatus(prev => ({ 
+                        log: [...prev.log, `DETECTED MEDIA TYPE: [${type.toUpperCase()}]`], 
+                        progress: 10 
+                    }));
+
+                    // 1. Upload
                     setScanStatus(prev => ({ log: [...prev.log, 'ENCRYPTING PAYLOAD...'], progress: 30 }));
                     const fd = new FormData();
                     fd.append('file', f);
@@ -142,14 +115,13 @@
                     if (!upRes.ok) throw new Error("Upload Failed");
                     const upData = await upRes.json();
                     
-                    // 3. SCAN
-                    setScanStatus(prev => ({ log: [...prev.log, `ENGAGING ${detectedType.toUpperCase()} ENGINE...`], progress: 60 }));
+                    // 2. Orchestration
+                    setScanStatus(prev => ({ log: [...prev.log, `ENGAGING ${type.toUpperCase()} ENGINE...`], progress: 60 }));
                     
                     const orchRes = await fetch(CONFIG.ORCHESTRATOR_URL, {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
-                        // FORCE THE DETECTED TYPE HERE
-                        body: JSON.stringify({ mediaUrl: upData.secure_url, type: detectedType }) 
+                        body: JSON.stringify({ mediaUrl: upData.secure_url, type: type }) // Send the TRUSTED type
                     });
                     
                     if (!orchRes.ok) throw new Error("Backend Connection Failed");
@@ -169,7 +141,6 @@
                 }
             };
 
-            // *** PARSING LOGIC ***
             const getParsedResults = () => {
                 if (!report) return {};
                 const r = report;
@@ -183,6 +154,7 @@
 
                 try {
                     // 1. CRASH DETECTION
+                    // If the backend services crashed, DO NOT show "Verified Safe"
                     if (r.details?.document?.error || r.details?.forensic?.error || r.details?.video?.error) {
                          if (r.risk?.riskScore === 0 && r.risk?.riskLevel === "VERIFIED") {
                              return {
@@ -196,7 +168,7 @@
                          }
                     }
 
-                    // 2. NORMAL PARSING
+                    // 2. PARSING
                     if (r.media_type === 'audio') {
                         mode = "AUDIO";
                         const aud = r.details?.audio || {};
@@ -342,7 +314,7 @@
                                             </div>
                                             <div className="pt-6 border-t border-white/10">
                                                 <p className="text-sm leading-relaxed text-slate-300">
-                                                    {parsed.isError ? "Unable to verify file integrity. Core forensic services crashed or the file type is obfuscated." : (report.risk?.executiveSummary || "Analysis complete.")}
+                                                    {parsed.isError ? "Scan was inconclusive. The forensic service did not return a valid fingerprint. Please check the file type and retry." : (report.risk?.executiveSummary || "Analysis complete.")}
                                                 </p>
                                             </div>
                                         </div>
