@@ -30,7 +30,7 @@
     <script>
         window.onerror = function(msg, url, line, col, error) {
             document.getElementById('bsod').style.display = 'block';
-            document.getElementById('bsod').innerHTML = `<h1>SYSTEM HALTED</h1><p>${msg}</p><button onclick="location.reload()" style="background:white; color:blue; padding:10px; margin-top:20px;">RESTART</button>`;
+            document.getElementById('bsod').innerHTML = `<h1>SYSTEM HALTED</h1><p>Error: ${msg}</p><button onclick="location.reload()" style="background:white; color:blue; padding:10px; border:none; margin-top:20px; cursor:pointer;">RESTART SYSTEM</button>`;
         };
     </script>
 
@@ -39,11 +39,12 @@
         const { motion, AnimatePresence } = window.Motion;
         
         // ==========================================
-        // ⚠️ UPDATE THIS CONFIGURATION ⚠️
+        // ⚠️ CONFIGURATION (UPDATE THIS) ⚠️
         // ==========================================
         const CONFIG = {
             CLOUDINARY_URL: "https://api.cloudinary.com/v1_1/dphicbaf2/auto/upload",
             UPLOAD_PRESET: "yhqlojie",
+            // YOUR CLOUDFLARE WORKER URL
             ORCHESTRATOR_URL: "https://mediaproofai.mediaproofai.workers.dev/",
             GOOGLE_CLIENT_ID: "YOUR_GOOGLE_ID"
         };
@@ -79,54 +80,59 @@
                 if (!f) return;
                 
                 setView('scanning');
-                setScanStatus({ log: ['INITIALIZING KERNEL...'], progress: 5 });
+                setScanStatus({ log: ['INITIALIZING KERNEL...'], progress: 10 });
 
                 try {
-                    // *** SIMPLIFIED & ROBUST TYPE DETECTION ***
-                    // We trust the browser's MIME type first (it's 99.9% accurate).
-                    // If that fails, we check the extension.
-                    let type = 'document';
-                    const mime = f.type.split('/')[0]; // 'video', 'image', 'audio'
-                    const ext = f.name.split('.').pop().toLowerCase();
-
-                    if (['video', 'audio', 'image'].includes(mime)) {
-                        type = mime;
-                    } else if (['mp4','mov','avi','mkv','webm'].includes(ext)) {
-                        type = 'video';
-                    } else if (['jpg','jpeg','png','webp'].includes(ext)) {
-                        type = 'image';
-                    } else if (['mp3','wav','ogg'].includes(ext)) {
-                        type = 'audio';
-                    }
-
-                    // UPDATE LOG SO YOU CAN SEE WHAT IT DECIDED
-                    setScanStatus(prev => ({ 
-                        log: [...prev.log, `DETECTED MEDIA TYPE: [${type.toUpperCase()}]`], 
-                        progress: 10 
-                    }));
-
-                    // 1. Upload
-                    setScanStatus(prev => ({ log: [...prev.log, 'ENCRYPTING PAYLOAD...'], progress: 30 }));
+                    // 1. Upload to Cloudinary
+                    setScanStatus(prev => ({ log: [...prev.log, 'UPLOADING EVIDENCE...'], progress: 30 }));
                     const fd = new FormData();
                     fd.append('file', f);
                     fd.append('upload_preset', CONFIG.UPLOAD_PRESET);
                     
                     const upRes = await fetch(CONFIG.CLOUDINARY_URL, { method: 'POST', body: fd });
                     if (!upRes.ok) throw new Error("Upload Failed");
+                    
+                    // 2. GET TRUTH FROM CLOUD
                     const upData = await upRes.json();
                     
-                    // 2. Orchestration
-                    setScanStatus(prev => ({ log: [...prev.log, `ENGAGING ${type.toUpperCase()} ENGINE...`], progress: 60 }));
+                    // *** THE FIX: USE CLOUDINARY'S DETECTED TYPE ***
+                    let detectedType = upData.resource_type; // "image", "video", or "raw"
+                    
+                    // Fallback for audio (Cloudinary sometimes calls audio "video" or "raw")
+                    // We double check the format field if it exists
+                    if (detectedType === 'video' && ['mp3', 'wav', 'ogg'].includes(upData.format)) {
+                        detectedType = 'audio';
+                    }
+                    // Handle PDF/Docs which come as "image" or "raw" sometimes
+                    if (upData.format === 'pdf') detectedType = 'document';
+
+                    setScanStatus(prev => ({ 
+                        log: [...prev.log, `CLOUD IDENTIFIED TYPE: [${detectedType.toUpperCase()}]`], 
+                        progress: 50 
+                    }));
+                    
+                    // 3. Orchestration
+                    setScanStatus(prev => ({ log: [...prev.log, 'RUNNING HYBRID ANALYSIS...'], progress: 70 }));
                     
                     const orchRes = await fetch(CONFIG.ORCHESTRATOR_URL, {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ mediaUrl: upData.secure_url, type: type }) // Send the TRUSTED type
+                        // Send the VERIFIED type to backend
+                        body: JSON.stringify({ mediaUrl: upData.secure_url, type: detectedType }) 
                     });
                     
                     if (!orchRes.ok) throw new Error("Backend Connection Failed");
                     const data = await orchRes.json();
                     
+                    // 4. Force Override if Service Crashed
+                    if (data.details?.document?.error || data.details?.forensic?.error || data.details?.video?.error) {
+                        if (data.risk) {
+                            data.risk.riskLevel = "INCONCLUSIVE";
+                            data.risk.riskScore = 0; // Reset
+                            data.risk.executiveSummary = "Scan failed. The file format is ambiguous or the forensic engine timed out.";
+                        }
+                    }
+
                     setReport(data);
                     setScanStatus(prev => ({ log: [...prev.log, 'COMPLETE.'], progress: 100 }));
                     
@@ -141,6 +147,7 @@
                 }
             };
 
+            // *** PARSING LOGIC ***
             const getParsedResults = () => {
                 if (!report) return {};
                 const r = report;
@@ -153,22 +160,12 @@
                 let isError = false;
 
                 try {
-                    // 1. CRASH DETECTION
-                    // If the backend services crashed, DO NOT show "Verified Safe"
-                    if (r.details?.document?.error || r.details?.forensic?.error || r.details?.video?.error) {
-                         if (r.risk?.riskScore === 0 && r.risk?.riskLevel === "VERIFIED") {
-                             return {
-                                mode: "SYSTEM_ALERT",
-                                prob: "N/A",
-                                method: "SERVICE_TIMEOUT",
-                                physics: "UNVERIFIED",
-                                signature: "UNKNOWN",
-                                isError: true
-                             };
-                         }
+                    // Check for backend failures
+                    if (r.risk?.riskLevel === "INCONCLUSIVE") {
+                        isError = true;
+                        return { mode: "SYSTEM_ALERT", prob: "N/A", method: "ERROR", physics: "N/A", signature: "N/A", isError: true };
                     }
 
-                    // 2. PARSING
                     if (r.media_type === 'audio') {
                         mode = "AUDIO";
                         const aud = r.details?.audio || {};
@@ -246,7 +243,6 @@
 
                     <main className="flex-1 overflow-y-auto relative">
                         <AnimatePresence mode="wait">
-                            
                             {view === 'landing' && (
                                 <motion.div key="landing" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="min-h-screen flex flex-col items-center justify-center relative p-6">
                                     <div className="text-center max-w-4xl z-10">
@@ -314,7 +310,7 @@
                                             </div>
                                             <div className="pt-6 border-t border-white/10">
                                                 <p className="text-sm leading-relaxed text-slate-300">
-                                                    {parsed.isError ? "Scan was inconclusive. The forensic service did not return a valid fingerprint. Please check the file type and retry." : (report.risk?.executiveSummary || "Analysis complete.")}
+                                                    {riskLabel === "INCONCLUSIVE" ? "Scan failed. Ambiguous file type." : (report.risk?.executiveSummary || "Analysis complete.")}
                                                 </p>
                                             </div>
                                         </div>
